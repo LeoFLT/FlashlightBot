@@ -1,5 +1,5 @@
 # FlashlightBot
-Yet another match costs bot
+Yet another osu! match costs bot.
 
 # Requirements
 - Node.js (versions 8 and up)
