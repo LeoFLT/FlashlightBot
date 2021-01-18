@@ -1,0 +1,5 @@
+{
+	"globalPrefix": "$",
+	"token": "{{token}}",
+	"osuApiKey": "{{osuApiKey}}"
+}
