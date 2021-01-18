@@ -3,7 +3,8 @@ const { Match } = require('./classes.js');
 const { queryMatch } = require('./functions.js');
 const { round } = require('mathjs');
 const Discord = require('discord.js');
-
+const botImageEmbed = new Discord.MessageAttachment('./assets/flashlight.png');
+const mcImageEmbed = new Discord.MessageAttachment('./assets/mc_formula.png');
 const creator = process.env.OWNER;
 const globalPrefix = process.env.PREFIX;
 
@@ -31,25 +32,25 @@ client.on('message', async (message) => {
 
 	let prefix = globalPrefix;
 	let args;
-/*	// handle messages in a guild
-	if (message.guild) {
-		if (message.content.startsWith(globalPrefix)) {
-			prefix = globalPrefix;
+	/*	// handle messages in a guild
+		if (message.guild) {
+			if (message.content.startsWith(globalPrefix)) {
+				prefix = globalPrefix;
+			} else {
+				// check the guild-level prefix
+				const guildPrefix = await prefixes.get(message.guild.id);
+				if (message.content.startsWith(guildPrefix)) prefix = guildPrefix;
+			}
+	
+			// if we found a prefix, setup args; otherwise, this isn't a command
+			if (!prefix) return;
+			args = message.content.slice(prefix.length).trim().split(/\s+/);
 		} else {
-			// check the guild-level prefix
-			const guildPrefix = await prefixes.get(message.guild.id);
-			if (message.content.startsWith(guildPrefix)) prefix = guildPrefix;
+			// handle DMs
+			const slice = message.content.startsWith(globalPrefix) ? globalPrefix.length : 0;
+			args = message.content.slice(slice).split(/\s+/);
 		}
-
-		// if we found a prefix, setup args; otherwise, this isn't a command
-		if (!prefix) return;
-		args = message.content.slice(prefix.length).trim().split(/\s+/);
-	} else {
-		// handle DMs
-		const slice = message.content.startsWith(globalPrefix) ? globalPrefix.length : 0;
-		args = message.content.slice(slice).split(/\s+/);
-	}
-*/
+	*/
 
 	args = message.content.slice(prefix.length).trim().split(/\s+/);
 	// get the first space-delimited argument after the prefix as the command
@@ -61,7 +62,7 @@ client.on('message', async (message) => {
 			await prefixes.set(message.guild.id, args[0]);
 			return message.channel.send(`Successfully set prefix to \`${args[0]}\``);
 		}
-	
+
 		return message.channel.send(`Prefix is \`${await prefixes.get(message.guild.id) || globalPrefix}\``);
 	}
 
@@ -75,29 +76,32 @@ Ignores the first two maps **and** the last map
 	}
 	if (command === 'info') {
 		const messageToSend = new Discord.MessageEmbed()
+			.attachFiles(botImageEmbed)
 			.setColor('#b6268c')
 			.setTitle('Yet another match costs bot')
 			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
 			.setDescription(`Flashlight is the result of [LeoFLT](https://osu.ppy.sh/users/3668779) losing a night's sleep just to code [D I O](https://osu.ppy.sh/users/3958619)'s match cost [formula](${mcFormulaImg}), nothing major.`)
-			.setThumbnail(client.user.displayAvatarURL({ size: 1024 }))
+			.setThumbnail('attachment://flashlight.png')
 			.setFooter(`Created by ${(await client.users.fetch(creator)).username}`, (await client.users.fetch(creator)).displayAvatarURL());
 		return message.channel.send(messageToSend);
 	}
 	if (command === 'formula') {
 		const messageToSend = new Discord.MessageEmbed()
+			.attachFiles(mcImageEmbed)
 			.setColor('#b6268c')
 			.setTitle('Match Costs Formula:')
-			.setImage(`${mcFormulaImg}`)
-			.setFooter('Original formula created by D I O')
+			.setImage('attachment://mc_formula.png')
+			.setFooter('Original formula created by D I O', 'https://a.ppy.sh/3958619')
 		return message.channel.send(messageToSend);
 	}
 
 	if (command === 'invite') {
 		const messageToSend = new Discord.MessageEmbed()
+			.attachFiles(botImageEmbed)
 			.setColor('#b6268c')
 			.setTitle('Yet another match costs bot')
 			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
-			.setThumbnail(client.user.displayAvatarURL({ size: 1024 }))
+			.setThumbnail('attachment://flashlight.png')
 			.setDescription('Use [this link](https://discord.com/oauth2/authorize?client_id=792672311048011826&permissions=378944&scope=bot) to invite the bot to your server.')
 		return message.channel.send(messageToSend);
 	}
