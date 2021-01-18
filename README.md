@@ -1,3 +1,8 @@
+<p align="center">
+  <img width="512px" src="assets/flashlight.svg">
+</p>
+
+
 # FlashlightBot
 Yet another osu! match costs bot
 
