@@ -8,7 +8,8 @@
     "url": "git://github.com/LeoFLT/FlashlightBot.git"
   },
   "scripts": {
-    "nodemon": "nodemon index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "test"
   },
   "author": "LeoFLT",
