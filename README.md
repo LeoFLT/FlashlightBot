@@ -1,7 +1,8 @@
 <p align="center">
-  <img width="512px" src="assets/flashlight.svg">
+  <a href="https://github.com/LeoFLT/FlashlightBot">
+    <img src="assets/flashlight.svg" width="512px" title="FlashlightBot">
+  </a>
 </p>
-
 
 # FlashlightBot
 Yet another osu! match costs bot
