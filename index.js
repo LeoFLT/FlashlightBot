@@ -79,7 +79,7 @@ Ignores the first two maps **and** the last map
 			.setTitle('Yet another match costs bot')
 			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
 			.setDescription(`Flashlight is the result of [LeoFLT](https://osu.ppy.sh/users/3668779) losing a night's sleep just to code [D I O](https://osu.ppy.sh/users/3958619)'s match cost [formula](${mcFormulaImg}), nothing major.`)
-			.setThumbnail(client.user.displayAvatarURL())
+			.setThumbnail(client.user.displayAvatarURL({ size: 1024 }))
 			.setFooter(`Created by ${(await client.users.fetch(creator)).username}`, (await client.users.fetch(creator)).displayAvatarURL());
 		return message.channel.send(messageToSend);
 	}
@@ -97,7 +97,7 @@ Ignores the first two maps **and** the last map
 			.setColor('#b6268c')
 			.setTitle('Yet another match costs bot')
 			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
-			.setThumbnail(client.user.displayAvatarURL())
+			.setThumbnail(client.user.displayAvatarURL({ size: 1024 }))
 			.setDescription('Use [this link](https://discord.com/oauth2/authorize?client_id=792672311048011826&permissions=378944&scope=bot) to invite the bot to your server.')
 		return message.channel.send(messageToSend);
 	}
