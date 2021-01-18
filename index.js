@@ -1,17 +1,20 @@
+require('dotenv').config();
 const { Match } = require('./classes.js');
-const { globalPrefix, token } = require('./config.json');
 const { queryMatch } = require('./functions.js');
 const { round } = require('mathjs');
 const Discord = require('discord.js');
+
+const globalPrefix = process.env.PREFIX;
+
 // const Keyv = require('keyv');
 // const prefixes = new Keyv();
 // prefixes.on('error', e => console.error('Keyv connection error:', e));
 
 const client = new Discord.Client();
-client.login(token);
+client.login();
 
 client.once('ready', () => {
-	console.log('Connected.');
+	console.log(`Connected as an instance of '${client.user.tag}'`);
 });
 
 
