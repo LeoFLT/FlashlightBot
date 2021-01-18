@@ -7,23 +7,42 @@ Yet another osu! match costs bot
 # How to use
 * Clone this repo to your current folder:
 
-    `git clone https://github.com/LeoFLT/FlashlightBot`
+    ```bash
+    git clone https://github.com/LeoFLT/FlashlightBot
+    ```
 
 * cd into the folder:
 
-    `cd FlashlightBot`
+    ```bash
+    cd ./FlashlightBot`
+    ```
 
-* Edit config.json and add:
-    * The global prefix of your choice (if you want to change the default one);
-    * A Discord Bot token;
-    * An osu! API v1 key.
+* create a .env file:
+    ```bash
+    touch .env
+    vim .env
+    ```
+    * In the newly created file, add the following KEY=VALUE pairs
+        ```bash
+        DISCORD_TOKEN=YOUR.DISCORD_TOKEN
+        OSU_API_KEY=YOUR.OSU_API_KEY
+        OWNER=YOUR.DISCORD_USER_ID
+        PREFIX=YOUR.CHOSEN.PREFIX
+        ```
+        some things to note:
+        * the KEY=VALUE pairs must not contain spaces
+        * the prefix length must not exceed two characters
     
 * Install dependencies:
 
-    `npm install`
+    ```bash
+    npm install
+    ```
 
 * Start the server:
 
-    `node .`
+    ```bash
+    node index.js
+    ```
 
 The default prefix is `$` (command to change it on the fly pending).
