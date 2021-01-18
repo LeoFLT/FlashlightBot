@@ -1,6 +1,6 @@
 {
   "name": "flashlightbot",
-  "version": "0.8.0",
+  "version": "0.9.1",
   "description": "Yet another osu! match costs bot.",
   "main": "index.js",
   "repository": {
