@@ -1,5 +1,6 @@
-const { osuApiKey } = require('./config.json');
+require('dotenv').config();
 const fetch = require('node-fetch');
+const osuApiKey = process.env.OSU_API_KEY;
 
 /**
  * Queries a user ID using the osu! API
