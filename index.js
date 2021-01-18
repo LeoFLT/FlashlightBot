@@ -4,7 +4,10 @@ const { queryMatch } = require('./functions.js');
 const { round } = require('mathjs');
 const Discord = require('discord.js');
 
+const creator = process.env.OWNER;
 const globalPrefix = process.env.PREFIX;
+
+const mcFormulaImg = 'https://i.imgur.com/hmF9ucC.png';
 
 // const Keyv = require('keyv');
 // const prefixes = new Keyv();
@@ -74,17 +77,17 @@ Ignores the first two maps **and** the last map
 		const messageToSend = new Discord.MessageEmbed()
 			.setColor('#b6268c')
 			.setTitle('Yet another match costs bot')
-			.setAuthor('Flashlight', 'https://cdn.discordapp.com/avatars/792672311048011826/2b4c98cc9eb9ec888effb4fefd08e2b6.png', 'https://flashlight.leoflt.com')
-			.setDescription("Flashlight is the result of [LeoFLT](https://osu.ppy.sh/users/3668779) losing a night's sleep just to code [D I O](https://osu.ppy.sh/users/3958619)'s match cost [formula](https://images-ext-1.discordapp.net/external/F7Zh9-EtJAapcun2jW0v4KHRSr3-4t6tkrbWg6yjtRo/http/puu.sh/GVkeX/c9999cc834.png?width=324&height=159), nothing major.")
-			.setThumbnail('https://cdn.discordapp.com/avatars/792672311048011826/2b4c98cc9eb9ec888effb4fefd08e2b6.png')
-			.setFooter('Created by LeoFLT', 'https://cdn.discordapp.com/avatars/146685063914848256/520c7de67563acb00649fd7957f2094c.png');
+			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
+			.setDescription(`Flashlight is the result of [LeoFLT](https://osu.ppy.sh/users/3668779) losing a night's sleep just to code [D I O](https://osu.ppy.sh/users/3958619)'s match cost [formula](${mcFormulaImg}), nothing major.`)
+			.setThumbnail(client.user.displayAvatarURL())
+			.setFooter(`Created by ${(await client.users.fetch(creator)).username}`, (await client.users.fetch(creator)).displayAvatarURL());
 		return message.channel.send(messageToSend);
 	}
 	if (command === 'formula') {
 		const messageToSend = new Discord.MessageEmbed()
 			.setColor('#b6268c')
 			.setTitle('Match Costs Formula:')
-			.setImage('https://i.imgur.com/VN8MFoG.png')
+			.setImage(`${mcFormulaImg}`)
 			.setFooter('Original formula created by D I O')
 		return message.channel.send(messageToSend);
 	}
@@ -93,8 +96,8 @@ Ignores the first two maps **and** the last map
 		const messageToSend = new Discord.MessageEmbed()
 			.setColor('#b6268c')
 			.setTitle('Yet another match costs bot')
-			.setAuthor('Flashlight', 'https://cdn.discordapp.com/avatars/792672311048011826/2b4c98cc9eb9ec888effb4fefd08e2b6.png', 'https://flashlight.leoflt.com')
-			.setThumbnail('https://cdn.discordapp.com/avatars/792672311048011826/2b4c98cc9eb9ec888effb4fefd08e2b6.png')
+			.setAuthor('Flashlight', client.user.displayAvatarURL(), 'https://flashlight.leoflt.com')
+			.setThumbnail(client.user.displayAvatarURL())
 			.setDescription('Use [this link](https://discord.com/oauth2/authorize?client_id=792672311048011826&permissions=378944&scope=bot) to invite the bot to your server.')
 		return message.channel.send(messageToSend);
 	}
