@@ -14,7 +14,7 @@ Yet another osu! match costs bot
 * cd into the folder:
 
     ```bash
-    cd ./FlashlightBot`
+    cd ./FlashlightBot
     ```
 
 * create a .env file:
