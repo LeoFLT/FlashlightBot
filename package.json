@@ -1,0 +1,19 @@
+{
+  "name": "flashlightbot",
+  "version": "0.8.0",
+  "description": "Yet another osu! match costs bot.",
+  "main": "index.js",
+  "scripts": {
+    "nodemon": "nodemon index.js",
+    "test": "test"
+  },
+  "author": "LeoFLT",
+  "license": "ISC",
+  "dependencies": {
+    "@keyv/mongo": "^1.1.0",
+    "config": "file:./config.json",
+    "discord.js": "^12.5.1",
+    "keyv": "^4.0.3",
+    "mathjs": "^8.1.1"
+  }
+}
