@@ -65,7 +65,7 @@ const Match = class {
 			const allScores = [];
 			// get the median score for this map
 			for (const scores of map.scores) {
-				if(!scores) {
+				if (!scores) {
 					allScores.push(0);
 					continue;
 				};
@@ -75,7 +75,7 @@ const Match = class {
 			let medianScoreMap;
 			let scoreTest = allScores.filter(r => r > 2000);
 			if (scoreTest) {
-				if (scoreTest === []) medianScoreMap = 0;
+				if (scoreTest.length === 0) medianScoreMap = 0;
 				if (scoreTest.length === 1) medianScoreMap = scoreTest[0];
 				if (scoreTest.length > 1) medianScoreMap = median(scoreTest);
 			}
