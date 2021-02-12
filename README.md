@@ -8,7 +8,8 @@
 Yet another osu! match costs bot
 
 # Requirements
-- Node.js (versions 8 and up)
+- Node.js v10+
+- [Math.js](https://mathjs.org)
 
 # How to use
 * Clone this repo to your current folder:
