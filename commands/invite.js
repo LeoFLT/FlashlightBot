@@ -3,7 +3,7 @@ module.exports = {
     description: 'returns an invite to add flashlight to another guilds',
     usage: '',
     aliases: ['inv'],
-    execute(message) {
+    execute(message, args, client, Discord) {
         const botImageEmbed = new Discord.MessageAttachment('./assets/flashlight.png');
         const messageToSend = new Discord.MessageEmbed()
             .attachFiles(botImageEmbed)
