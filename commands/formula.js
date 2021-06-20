@@ -3,7 +3,7 @@ module.exports = {
     description: 'Information about the formula used to calculate with `match_cost`',
     usage: '',
     aliases: [''],
-    execute(message) {
+    execute(message, args, client, Discord) {
         const mcImageEmbed = new Discord.MessageAttachment('./assets/mc_formula.png');
         const messageToSend = new Discord.MessageEmbed()
             .attachFiles(mcImageEmbed)
