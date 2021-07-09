@@ -1,6 +1,6 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
-const Discord = require('discord.js');
+const { MessageEmbed } = require('discord.js');
 const osuApiKey = process.env.OSU_API_KEY;
 
 /**
@@ -28,20 +28,41 @@ const queryPlayer = async (userId) => {
 	return result[0];
 };
 
-const mcEmbed = (teamRed, teamBlue, scoreRed, scoreBlue, matchId, lobbyName, matchStartTime, warmupMessage, mode, is1v1) => {
-	const matchDescResult = ((matchIs1v1) => {
-		console.log(scoreRed, scoreBlue);
-		let regexp = / • \[([\w\s-_\]\[]+)\]/;
+const mcEmbed = (teamRed, teamBlue, scoreRed, scoreBlue, matchId, lobbyName, matchStartTime, warmupMessage, mode, is1v1, is1v1PlayerObj, gameMode) => {
+	let gameModeImg;
+	switch (gameMode) {
+		case '0':
+			gameModeImg = 'https://i.imgur.com/fnRPSk2.png';
+			break;
+		case '1':
+			gameModeImg = 'https://i.imgur.com/LMaVI8A.png';
+			break;
+		case '2':
+			gameModeImg = 'https://i.imgur.com/kftQ0tR.png';
+			break;
+
+		case '3':
+			gameModeImg = 'https://i.imgur.com/YHi4Mer.png';
+			break;
+		case '4':
+			gameModeImg = 'https://i.imgur.com/t6zXMlG.png';
+			break;
+	}
+	const matchDescResult = (() => {
 		let result;
-		if (matchIs1v1) {
-			result = scoreRed > scoreBlue ?
-				`**${regexp.exec(teamRed[0])[1]}: \`${scoreRed}\`**\n`
-				+ `${regexp.exec(teamBlue[0])[1]}: \`${scoreBlue}\`` :
-				scoreBlue > scoreRed ?
-					`${regexp.exec(teamRed[0])[1]}: \`${scoreRed}\`\n**`
-					+ `${regexp.exec(teamBlue[0])[1]}: \`${scoreBlue}\`**` :
-					`${regexp.exec(teamRed[0])[1]}: \`${scoreRed}\`\n`
-					+ `${regexp.exec(teamBlue[0])[1]}: \`${scoreBlue}\``;
+		if (is1v1) {
+			if (is1v1PlayerObj.firstPlayer.score > is1v1PlayerObj.secondPlayer.score) {
+				result = `**•**\t\`${is1v1PlayerObj.firstPlayer.score}\`\t**[${is1v1PlayerObj.firstPlayer.username}:](https://osu.ppy.sh/users/${is1v1PlayerObj.firstPlayer.id})**\n`
+				+ `•\t\`${is1v1PlayerObj.secondPlayer.score}\`\t[${is1v1PlayerObj.secondPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.secondPlayer.id})`;
+			}
+			else if (is1v1PlayerObj.secondPlayer.score > is1v1PlayerObj.firstPlayer.score){
+				result = `**•**\t\`${is1v1PlayerObj.secondPlayer.score}\`\t**[${is1v1PlayerObj.secondPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.secondPlayer.id})**\n`
+				+ `•\t\`${is1v1PlayerObj.firstPlayer.score}\`\t[${is1v1PlayerObj.firstPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.firstPlayer.id})`;
+			
+			} else {
+				result = `•\t\`${is1v1PlayerObj.firstPlayer.score}\`\t[${is1v1PlayerObj.firstPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.firstPlayer.id})\n`
+				+ `•\t\`${is1v1PlayerObj.secondPlayer.score}\`\t[${is1v1PlayerObj.secondPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.secondPlayer.id})`;
+			}
 		}
 		else {
 			result = scoreRed > scoreBlue ?
@@ -55,41 +76,35 @@ const mcEmbed = (teamRed, teamBlue, scoreRed, scoreBlue, matchId, lobbyName, mat
 		}
 		return result;
 	});
-	let embed = new Discord.MessageEmbed()
+	let embed = new MessageEmbed()
 		.setColor('#b6268c')
-		.setTitle(`**${lobbyName}**`)
-		.setURL(`https://osu.ppy.sh/community/matches/${matchId}`)
-		.setFooter('Played at ' + new Date(matchStartTime).toUTCString().replace('GMT', 'UTC'));
+		.setAuthor(lobbyName, gameModeImg, `https://osu.ppy.sh/community/matches/${matchId}`)
+		.setTimestamp(new Date(matchStartTime))
 	if (is1v1) {
+		let finalArr = teamRed.concat(teamBlue);
 		embed.setDescription(warmupMessage)
 			.addFields(
 				{ name: 'Final Score:', value: matchDescResult(), inline: false },
-				{ name: `\u200b`, value: teamRed.length > 0 ? teamRed : '\u200b', inline: true },
-				{ name: '\u200b', value: '\u200b', inline: true },
-				{ name: `\u200b`, value: teamBlue.length > 0 ? teamBlue : '\u200b', inline: true }
+				{ name: 'Match Costs', value: finalArr.length > 0 ? finalArr : '\u200b', inline: true },
 			);
 	}
 	else if (mode === '0') {
 		embed.setDescription(warmupMessage)
 			.addFields(
 				{ name: `\u200b`, value: teamRed.length > 0 ? teamRed : '\u200b', inline: true },
-				{ name: '\u200b', value: '\u200b', inline: true },
 				{ name: `\u200b`, value: teamBlue.length > 0 ? teamBlue : '\u200b', inline: true }
 			);
 	}
 	else {
-		console.log({ name: 'Final Score:', value: matchDescResult(), inline: false });
 		embed.setDescription(warmupMessage)
 			.addFields(
 				{ name: 'Final Score:', value: matchDescResult(), inline: false },
 				{ name: `:red_circle: Red Team (${teamRed.length})`, value: teamRed.length > 0 ? teamRed : '\u200b', inline: true },
-				{ name: '\u200b', value: '\u200b', inline: true },
 				{ name: `:blue_circle: Blue Team (${teamBlue.length})`, value: teamBlue.length > 0 ? teamBlue : '\u200b', inline: true }
 			);
 	}
 	return embed;
 };
-
 exports.queryMatch = queryMatch;
 exports.queryPlayer = queryPlayer;
 exports.mcEmbed = mcEmbed;

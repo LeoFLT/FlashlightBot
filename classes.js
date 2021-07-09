@@ -22,6 +22,13 @@ class Match {
 		this.end_time = obj.match.end_time;
 		this.games = obj.games;
 		this.team_type = obj.games[0].team_type;
+		this.uniqueGameModes = new Set(obj.games.map(game => game.play_mode));
+	}
+	get gameMode() {
+		return this.isUniqueGameMode ? this.uniqueGameModes.values().next().value : '4';
+	}
+	get isUniqueGameMode() {
+		return this.uniqueGameModes.size === 1;
 	}
 	// getter for the maps array
 	get getMaps() {
@@ -35,53 +42,110 @@ class Match {
 	getScores(index) {
 		return this.getMap(index).scores;
 	}
-	async calcMatchCosts(warmupsStartOffset, warmupsEndOffset) {
+	async calcMatchCosts(warmupsStartOffset, warmupsEndOffset, multipliers) {
+		let modEnum;
+		if (multipliers) {
+			modEnum = [
+				{ name: 'None', abbr: 'NM', value: 0, multiplier: 1 },
+				{ name: 'NoFail', abbr: 'NF', value: 1, multiplier: 1 },
+				{ name: 'Easy', abbr: 'EZ', value: 2, multiplier: 1 },
+				{ name: 'TouchDevice', abbr: 'TD', value: 4, multiplier: 1 },
+				{ name: 'Hidden', abbr: 'HD', value: 8, multiplier: 1 },
+				{ name: 'DoubleTime', abbr: 'DT', value: 64, multiplier: 1 },
+				{ name: 'HardRock', abbr: 'HR', value: 16, multiplier: 1 },
+				{ name: 'SuddenDeath', abbr: 'SD', value: 32, multiplier: 1 },
+				{ name: 'Relax', abbr: 'RX', value: 128, multiplier: 1 },
+				{ name: 'HalfTime', abbr: 'HT', value: 256, multiplier: 1 },
+				{ name: 'Nightcore', abbr: 'NC', value: 512, multiplier: 1 },
+				{ name: 'Flashlight', abbr: 'FL', value: 1024, multiplier: 1 },
+				{ name: 'SpunOut', abbr: 'SO', value: 4096, multiplier: 1 },
+				{ name: 'Perfect', abbr: 'PF', value: 16384, multiplier: 1 },
+			];
+		}
+		const players = new Players();
 		let maps;
 		let teamScore1 = 0;
 		let teamScore2 = 0;
-
 		if (warmupsStartOffset || warmupsEndOffset) {
 			// no maps to calculate
 			// can't simplify this further so it looks ugly
 			if (warmupsStartOffset + -warmupsEndOffset >= this.getMaps.length) return;
 			// if there's a start offset but not an end offset
 			if (warmupsStartOffset && !warmupsEndOffset) maps = this.getMaps.slice(warmupsStartOffset);
-			// if there's a end offset but not a start offset 
+			// if there's am end offset but not a start offset 
 			else if (!warmupsStartOffset && warmupsEndOffset) maps = this.getMaps.slice(0, warmupsEndOffset);
-			// if there's both a start and end offset
+			// if there's both a start and end offsets
 			else maps = this.getMaps.slice(warmupsStartOffset, warmupsEndOffset);
 		} else {
 			// no start or end offsets
 			maps = this.getMaps;
 		}
-		let firstPlayer, secondPlayer;
-		if (this.team_type === '0' && maps[0].scores.length === 2) {
-			console.log("this.team_type === '0' && maps[0].scores.length === 2");
-			firstPlayer = maps[0].scores[0].user_id;
-			secondPlayer = maps[0].scores[1].user_id;
+		const isOneVsOne = this.team_type === '0' && maps[0].scores.length === 2 && this.name.toLowerCase().includes('vs');
+		let playerObj;
+		if (isOneVsOne) {
+			playerObj = {
+				firstPlayer: {
+					username: (await queryPlayer(maps[0].scores[0].user_id)).username,
+					id: maps[0].scores[0].user_id,
+					score: 0
+				},
+				secondPlayer: {
+					username: (await queryPlayer(maps[0].scores[1].user_id)).username,
+					id: maps[0].scores[1].user_id,
+					score: 0
+				}
+			};
 		}
-		for (const map of maps) {
+		for (const [index, map] of maps.entries()) {
+			let playerMapObj = {};
 			let playerScores1 = 0;
 			let playerScores2 = 0;
 			for (const player of map.scores) {
-				if (this.team_type === '0' && map.scores.length === 2) {
-					if (player.user_id === firstPlayer) {
-						playerScores2 = parseInt(player.score);
+				let playerMultiplier = 1;
+				if (multipliers) {
+					for (const multiplierObj of multipliers) {
+						let playerMods;
+						if (!map.mods && !player.enabled_mods) continue;
+						if (!map.enabled_mods && player.enabled_mods) playerMods = parseFloat(player.enabled_mods);
+						if (map.mods && !player.enabled_mods) playerMods = parseFloat(map.mods);
+						let finalModArr = [];
+						for (let mod of modEnum) {
+							if ((playerMods & mod.value) > 0) {
+								if (mod.value === 512 || mod.value === 16384) continue;
+								finalModArr.push(mod.abbr);
+								continue; // artificial limitation for now
+							}
+						}
+						if (finalModArr.includes(multiplierObj.mod.toUpperCase())) {
+							playerMultiplier *= multiplierObj.value;
+							player.score *= playerMultiplier;
+						}
 					}
-					if (player.user_id === secondPlayer) {
-						playerScores1 = parseInt(player.score);
+				}
+				if (isOneVsOne && map.scores.length === 2) {
+					if (player.user_id === playerObj.firstPlayer.id) {
+						playerMapObj.firstPlayerScore = parseInt(player.score) * playerMultiplier;
 					}
-				} else {
-					if (player.team === '2') playerScores1 += parseInt(player.score);
-					if (player.team === '1') playerScores2 += parseInt(player.score);
+					else if (player.user_id === playerObj.secondPlayer.id) {
+						playerMapObj.secondPlayerScore = parseInt(player.score) * playerMultiplier;
+					}
+				}
+				else {
+					if (player.team === '2') playerScores1 += (parseInt(player.score) * playerMultiplier);
+					if (player.team === '1') playerScores2 += (parseInt(player.score) * playerMultiplier);
 				}
 			}
-			if (playerScores1 > playerScores2) teamScore1 += 1;
-			if (playerScores2 > playerScores1) teamScore2 += 1;
+			if (isOneVsOne && map.scores.length === 2) {
+				if (playerMapObj.firstPlayerScore > playerMapObj.secondPlayerScore) playerObj.firstPlayer.score++;
+				else if (playerMapObj.secondPlayerScore > playerMapObj.firstPlayerScore) playerObj.secondPlayer.score++;
+			}
+			else {
+				if (playerScores1 > playerScores2) teamScore1 += 1;
+				if (playerScores2 > playerScores1) teamScore2 += 1;
+			}
 		}
 		// used to find the median of maps played
 		const timesPlayedArr = [];
-		const players = new Players();
 		// map of map collection
 		for (const map of maps) {
 			const allScores = [];
@@ -154,6 +218,7 @@ class Match {
 			lobbyName,
 			players,
 			is1v1: this.team_type === '0' && maps[0].scores.length === 2,
+			teamOrderOneVsOne: playerObj,
 			result: {
 				team1: teamScore1,
 				team2: teamScore2
