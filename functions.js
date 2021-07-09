@@ -52,7 +52,7 @@ const mcEmbed = (teamRed, teamBlue, scoreRed, scoreBlue, matchId, lobbyName, mat
 		let result;
 		if (is1v1) {
 			if (is1v1PlayerObj.firstPlayer.score > is1v1PlayerObj.secondPlayer.score) {
-				result = `**•**\t\`${is1v1PlayerObj.firstPlayer.score}\`\t**[${is1v1PlayerObj.firstPlayer.username}:](https://osu.ppy.sh/users/${is1v1PlayerObj.firstPlayer.id})**\n`
+				result = `**•**\t\`${is1v1PlayerObj.firstPlayer.score}\`\t**[${is1v1PlayerObj.firstPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.firstPlayer.id})**\n`
 				+ `•\t\`${is1v1PlayerObj.secondPlayer.score}\`\t[${is1v1PlayerObj.secondPlayer.username}](https://osu.ppy.sh/users/${is1v1PlayerObj.secondPlayer.id})`;
 			}
 			else if (is1v1PlayerObj.secondPlayer.score > is1v1PlayerObj.firstPlayer.score){
