@@ -1,0 +1,27 @@
+{
+  "name": "flashlight_rewrite",
+  "author": "LeoFLT",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "watch": "tsc -w",
+    "dev:start": "ts-node",
+    "compile:start": "npm run build && node dist/app.js"
+  },
+  "devDependencies": {
+    "@types/node": "^15.12.4",
+    "nodemon": "^2.0.7",
+    "ts-node": "^10.2.1"
+  },
+  "dependencies": {
+    "@types/node-fetch": "^2.5.12",
+    "axios": "^0.21.1",
+    "chalk": "^4.1.2",
+    "discord.js": "^13.1.0",
+    "dotenv": "^10.0.0",
+    "node-fetch": "^2.6.2"
+  }
+}
