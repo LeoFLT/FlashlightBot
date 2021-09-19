@@ -1,11 +1,11 @@
+import config from "../config/envVars";
 import {
     Client as DiscordClient,
     ClientOptions as DiscordOptions,
     Collection as DiscordCollection,
 } from "discord.js";
 import fetch from "node-fetch";
-import { Match, Game, Type as EventType } from "../definitions/Match";
-
+import { Game } from "../definitions/Match";
 export interface Command {
     name: string;
     aliases: string[];
@@ -74,8 +74,8 @@ export class Flashlight extends DiscordClient {
         };
         const body = {
             grant_type: "client_credentials",
-            client_id: parseInt(process.env.OSU_CLIENT_ID || ""),
-            client_secret: process.env.OSU_CLIENT_SECRET,
+            client_id: config.osu.clientId,
+            client_secret: config.osu.clientSecret,
             scope: "public"
         };
         const req = await fetch("https://osu.ppy.sh/oauth/token", {

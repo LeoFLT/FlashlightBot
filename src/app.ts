@@ -1,4 +1,4 @@
-import * as config from "./config/discord";
+import config from "./config/envVars";
 import Logger from "./utils/logger";
 import { Command, Event, Flashlight } from "./classes/Flashlight";
 import { readdirSync } from "fs";
@@ -32,4 +32,4 @@ for (const file of eventFiles) {
     }
 }
 
-client.login(config.DISCORD_TOKEN);
+client.login(config.discord.token);
