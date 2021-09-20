@@ -21,6 +21,7 @@ export interface Detail {
 }
 
 export enum Type {
+    MatchCreated = "match-created",
     MatchDisbanded = "match-disbanded",
     Other = "other",
     PlayerJoined = "player-joined",
@@ -38,6 +39,7 @@ export interface Game {
     mods:         Mod[];
     beatmap?:     Beatmap;
     scores:       Score[];
+    medianScore:  number;
 }
 
 export interface Beatmap {
@@ -78,13 +80,19 @@ export interface Hype {
 }
 
 export enum Mod {
+    NM = "NM",
     NF = "NF",
     EZ = "EZ",
     HD = "HD",
     HR = "HR",
+    SD = "SD",
     DT = "DT",
+    RX = "RX",
+    HT = "HT",
     NC = "NC",
-    FL = "FL"
+    FL = "FL",
+    SO = "SO",
+    PF = "PF"
 }
 
 export interface Score {
@@ -146,6 +154,9 @@ export interface User {
     profile_colour:  null | string;
     username:        string;
     country:         Country;
+    mapAmount?:      number;
+    matchCost?:      number;
+    scores?:         number[];
 }
 
 export interface Country {

@@ -7,12 +7,14 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "dev:start": "ts-node app.ts",
+    "start": "node dist/app.js",
+    "dev:jit": "ts-node src/app.ts",
+    "dev:start": "nodemon dist/app.js",
     "compile:start": "npm run build && node dist/app.js"
   },
   "devDependencies": {
     "@types/node": "^15.12.4",
-    "@types/node-fetch": "^3.0.3",
+    "@types/node-fetch": "^2.5.12",
     "nodemon": "^2.0.7",
     "ts-node": "^10.2.1"
   },
