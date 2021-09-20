@@ -28,14 +28,27 @@ export enum Type {
     PlayerLeft = "player-left",
 }
 
+export enum TeamType {
+    OneVS = "one-vs",
+    TeamVS = "team-vs",
+    HeadToHead = "head-to-head",
+    Unknown = "unknown",
+}
+
+export enum GameMode {
+    Osu = "osu",
+    Taiko = "taiko",
+    Mania = "mania",
+    Catch = "fruits",
+}
 export interface Game {
     id:           number;
     start_time:   string;
     end_time:     null | string;
-    mode:         "osu" | "taiko" | "mania" | "fruits";
+    mode:         GameMode;
     mode_int:     number;
     scoring_type: string;
-    team_type:    string;
+    team_type:    TeamType;
     mods:         Mod[];
     beatmap?:     Beatmap;
     scores:       Score[];
@@ -119,8 +132,9 @@ export interface ScoreMatch {
 }
 
 export enum Team {
-    Blue = "blue",
     Red = "red",
+    Blue = "blue",
+    None = "none",
 }
 
 export interface Statistics {
@@ -142,7 +156,7 @@ export interface MatchMatch {
 export interface User {
     avatar_url:      string;
     country_code:    string;
-    default_group:   DefaultGroup;
+    default_group:   UserGroup;
     id:              number;
     is_active:       boolean;
     is_bot:          boolean;
@@ -154,9 +168,10 @@ export interface User {
     profile_colour:  null | string;
     username:        string;
     country:         Country;
-    mapAmount?:      number;
-    matchCost?:      number;
-    scores?:         number[];
+    mapAmount:       number;
+    matchCost:       number;
+    scores:          { id: number, score: number }[];
+    team?:           Team;
 }
 
 export interface Country {
@@ -164,7 +179,7 @@ export interface Country {
     name: string;
 }
 
-export enum DefaultGroup {
+export enum UserGroup {
     Alumni = "alumni",
     BN = "bn",
     Default = "default",
