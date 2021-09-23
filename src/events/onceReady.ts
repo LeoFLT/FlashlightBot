@@ -1,16 +1,15 @@
 import chalk from "chalk";
 import Logger from "../utils/logger";
-import { Event } from "../classes/Flashlight";
+import { Flashlight } from "../classes/Flashlight";
 
-export const event: Event =  {
+export const event: Flashlight.Event =  {
     name: "ready",
     once: true,
-    async execute(client) {
+    async execute(client: Flashlight.Client) {
         Logger.info(`Logged in as ${chalk.red(client?.user?.tag)}`);
-        const res = await client.fetchMultiplayer(process.env.TEST_MP_LINK || "", {
-            mapIndex: { startIndex: 0, endIndex: 2 },
-            multipliers: {"NM": 0.1, "NF": 1.2, "EZ": 2 } });
-        res.playerList.forEach(player => console.log(`${player.username} (Team ${player.team}):       \t${player.matchCost}`));
-        console.log(res.gameMode);
+        const args: string[] = ["-nm 0.2","-dt 3", "-ez 3"];
+        //const mp = await client.fetchMultiplayer(process.env.TEST_MP_LINK || "", { mapIndex: { midIndex: [1] } });
+        //mp.playerList.forEach(p => console.log(`${p.username} (${p.team}) - Cost: ${p.matchCost}`));
+        //console.log(chalk.red(`Red: ${mp.teamScores?.red}`) + "\n" + chalk.blue(`Blue: ${mp.teamScores?.blue}`));
     }
 };

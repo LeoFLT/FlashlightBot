@@ -1,7 +1,7 @@
-import { Command } from "../classes/Flashlight";
+import { Flashlight } from "../classes/Flashlight";
 import { Message as DiscordMessage } from "discord.js";
 
-export const command: Command = {
+export const command: Flashlight.Command = {
     name: "match_costs",
     description: "Calculate match costs for a match",
     aliases: ["mc"],

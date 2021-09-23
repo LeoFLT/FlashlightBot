@@ -1,7 +1,7 @@
-import { Command } from "../classes/Flashlight";
+import { Flashlight } from "../classes/Flashlight";
 import { Message as DiscordMessage } from "discord.js";
 
-export const command: Command = {
+export const command: Flashlight.Command = {
     name: "ping",
     description: "pong?",
     aliases: [],
