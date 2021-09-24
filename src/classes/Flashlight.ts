@@ -1,17 +1,17 @@
 import config from "../config/envVars";
 import { Match, Type as EventType, Game, Mod as LobbyMod, Team, TeamType, User } from "../definitions/Match";
 import { median } from "../utils/math";
+import { parsedArgs } from "../utils/parser";
 import fetch from "node-fetch";
 import {
     Client as DiscordClient,
     ClientOptions as DiscordOptions,
-    Collection as DiscordCollection,
-    Message as DiscordMessage
+    Collection as DiscordCollection
 } from "discord.js";
 
 export namespace Flashlight {
-    namespace MatchCosts {
-        export interface mapIndexing {
+    export namespace MatchCosts {
+        export interface mapIndex {
             startIndex?: number;
             endIndex?: number;
             midIndex?: number[];
@@ -51,7 +51,7 @@ export namespace Flashlight {
         description: string;
         usage?: string;
         example?: string;
-        execute(client: Flashlight.Client, args?: string[], ...events: any[]): void;
+        execute(client: Flashlight.Client, args?: parsedArgs, ...events: any[]): void;
     }
 
     export class Client extends DiscordClient {
@@ -121,7 +121,7 @@ export namespace Flashlight {
 
         async fetchMultiplayer(lobby: string, options?: {
             multipliers?: MatchCosts.Mods,
-            mapIndex?: MatchCosts.mapIndexing
+            mapIndex?: MatchCosts.mapIndex
         }): Promise<MatchCosts.Return> {
             let eventIdCursor = 0;
             const modEnum = {

@@ -11,3 +11,7 @@ export function median (arr: number[]): number {
     
     return (copiedArr[mid - 1] + copiedArr[mid]) / 2;
 }
+
+export function round (number: number, decimalPlaces: number) {
+    return (Math.round(((number + Number.EPSILON) * (10 ** decimalPlaces))) / (10 ** decimalPlaces)).toFixed(decimalPlaces);
+}
