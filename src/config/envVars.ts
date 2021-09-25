@@ -10,5 +10,9 @@ export default {
     osu: {
         clientId: parseInt(process.env.OSU_CLIENT_ID || ""),
         clientSecret: process.env.OSU_CLIENT_SECRET
+    },
+    mongodb: {
+        port: process.env.MONGODB_PORT || 27017,
+        database: process.env.MONGODB_DATABASE || "flashlight"
     }
 }

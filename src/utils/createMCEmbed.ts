@@ -1,5 +1,5 @@
 import { Flashlight } from "../classes/Flashlight";
-import { Team, TeamType } from "../definitions/Match";
+import { Team, TeamType, GameMode } from "../definitions/Match";
 import { MessageOptions, MessageEmbed, EmbedField } from "discord.js";
 
 function embedFieldsFromArr(arr: string[]): EmbedField[] {
@@ -21,10 +21,28 @@ export function discordTimestamp(dateObj: Date, format?: string) {
 export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue: string[], red:string[] }, options?: {
     mention?: boolean, warmups?: Flashlight.MatchCosts.mapIndex, mods?: Flashlight.MatchCosts.Mods[] }): MessageOptions {
     let embed = new MessageEmbed()
-        .setColor("#b6268c")
-        .setTitle(lobby.lobbyInfo.name)
-        .setURL(`https://osu.ppy.sh/community/matches/${lobby.lobbyInfo.id}`);
-        
+        .setColor("#b6268c");
+    let gameModeImg;
+
+    switch (lobby.gameMode) {
+        case "osu":
+			gameModeImg = 'https://i.imgur.com/fnRPSk2.png';
+			break;
+		case "taiko":
+			gameModeImg = 'https://i.imgur.com/LMaVI8A.png';
+			break;
+		case "fruits":
+			gameModeImg = 'https://i.imgur.com/kftQ0tR.png';
+			break;
+		case "mania":
+			gameModeImg = 'https://i.imgur.com/YHi4Mer.png';
+			break;
+		case "multiple":
+			gameModeImg = 'https://i.imgur.com/t6zXMlG.png';
+			break;
+    }
+    embed.setAuthor(lobby.lobbyInfo.name, gameModeImg, `https://osu.ppy.sh/community/matches/${lobby.lobbyInfo.id}`);
+
     let isTie = (lobby.teamScores?.red as number) === (lobby.teamScores?.blue as number);
     let redIsWinner = isTie ? false : (lobby.teamScores?.red as number) > (lobby.teamScores?.blue as number);
     let redFinalArr = [...playerList.red];

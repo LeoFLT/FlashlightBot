@@ -7,7 +7,15 @@ import { Message as DiscordMessage, MessageEmbed } from "discord.js";
 export const command: Flashlight.Command = {
     name: "match_costs",
     description: "Calculate match costs for a match",
-    aliases: ["mc"],
+    aliases: ["mc", "matchcosts", "match_cost", "matchcost"],
+    usage:
+        "`[<remove from start> [remove from end]]` (`-` | `--`)(`i` | `ignore`)=`[<maps>,[to],[ignore]]` (`-` | `--`)`[nm | nf | ez | hd | hr | (dt | nc) | ht | fl | sd | rx | so | pf]`=`<number>`\n\n"
+        + "`[option/parameter]`: optional\n"
+        + "`<parameter>`: required\n" 
+        + "`[<parameter>, [parameter]]`: optional, at least one parameter is required\n"
+        + "(`o` | `option`): one of `o` or `option`\n"
+        + "all options to this command are case-insensitive",
+    example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HD=0.91 -rx=0",
     hasArgs: false,
     async execute(client, args, message: DiscordMessage) {
         if (!args)
@@ -82,7 +90,6 @@ export const command: Flashlight.Command = {
         if (options?.multipliers)
             opts.mods = options.multipliers;
 
-        // TODO: implement all cases (use a helper function, maybe?)
         try {
             switch (res.teamType) {
                 case TeamType.HeadToHead: {

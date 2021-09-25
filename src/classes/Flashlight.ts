@@ -8,6 +8,7 @@ import {
     ClientOptions as DiscordOptions,
     Collection as DiscordCollection
 } from "discord.js";
+import Keyv from "keyv";
 
 export namespace Flashlight {
     export namespace MatchCosts {
@@ -26,9 +27,11 @@ export namespace Flashlight {
             gameList: GameMap;
             teamScores?: { red: number, blue: number };
             medianLobby: number;
-            gameMode: { osu: boolean, taiko: boolean, mania: boolean, fruits: boolean }
+            gameModeList: { osu: boolean, taiko: boolean, mania: boolean, fruits: boolean };
+            gameMode: string | undefined;
         }
     }
+
     export class UserMap extends Map<number, User> {
         #elements: User[];
         constructor() {
@@ -77,7 +80,7 @@ export namespace Flashlight {
         public isFlashlightError: true;
         private _details?: any;
 
-        constructor (message: string, details?: (Object | { index: number, gameLength: number })) {
+        constructor(message: string, details?: (Object | { index: number, gameLength: number })) {
             super(message);
             this.isFlashlightError = true;
 
@@ -113,17 +116,20 @@ export namespace Flashlight {
         description: string;
         usage?: string;
         example?: string;
+        isHelp?: boolean;
         execute(client: Flashlight.Client, args?: parsedArgs, ...events: any[]): void;
     }
 
     export class Client extends DiscordClient {
-        commands: DiscordCollection<string, Command>;
-        osu: Flashlight.OsuOptions;
+        public commands: DiscordCollection<string, Command>;
+        public osu: Flashlight.OsuOptions;
+        public prefixes: Keyv<any>;
 
         constructor(options: DiscordOptions) {
             super(options);
             this.commands = new DiscordCollection();
-            this.osu = { };
+            this.prefixes = new Keyv(`mongodb://localhost:${config.mongodb.port}/${config.mongodb.database}?readPreference=primary&appname=Flashlight&directConnection=true&ssl=false`);
+            this.osu = {};
         }
 
         private get osuTokenIsValid(): boolean {
@@ -139,9 +145,9 @@ export namespace Flashlight {
                     await this.requestToken();
                 } finally {
                     if (!this.osuTokenIsValid)
-                        throw new Error ("osu-token-invalid-after-refresh");
+                        throw new Error("osu-token-invalid-after-refresh");
                 }
-            
+
             const headers = {
                 "Authorization": `Bearer ${this.osu.tokenInfo?.access_token}`,
                 "Accept": "application/json",
@@ -175,7 +181,7 @@ export namespace Flashlight {
             this.osu.tokenInfo = res;
 
             if (!this.osu?.tokenInfo)
-                throw new Error ("invalid-token-value");
+                throw new Error("invalid-token-value");
 
             this.osu.tokenInfo.expires_at = new Date(Date.now() + (res.expires_in * 1000));
             return this.osu;
@@ -187,16 +193,16 @@ export namespace Flashlight {
         }): Promise<MatchCosts.Return> {
             let eventIdCursor = 0;
             const modEnum = {
-                'NM': 1, 'NF': 1, 'EZ': 1,
-                'HD': 1, 'HR': 1, 'SD': 1,
-                'DT': 1, 'RX': 1, 'HT': 1,
-                'NC': 1, 'FL': 1, 'SO': 1, 'PF': 1
+                NM: 1, NF: 1, EZ: 1,
+                HD: 1, HR: 1, SD: 1,
+                DT: 1, RX: 1, HT: 1,
+                NC: 1, FL: 1, SO: 1, PF: 1
             };
             let lobbyPlayerMapCounts: number[] = [];
             if (options?.hasOwnProperty("multipliers")) {
                 for (const mod in options.multipliers) {
                     let currMod: LobbyMod = LobbyMod[mod as keyof typeof LobbyMod];
-                    
+
                     if (modEnum.hasOwnProperty(currMod)) {
                         if (currMod === LobbyMod.NC)
                             currMod = LobbyMod.DT;
@@ -275,12 +281,13 @@ export namespace Flashlight {
                 gameList: new GameMap(),
                 teamScores: { "red": 0, "blue": 0 },
                 medianLobby: 0,
-                gameMode: {
+                gameModeList: {
                     osu: false,
                     taiko: false,
                     mania: false,
                     fruits: false,
-                }
+                },
+                gameMode: "unknown"
             };
 
             let gameEvents: Game[] = [];
@@ -299,7 +306,7 @@ export namespace Flashlight {
                     endIndex = options.mapIndex.endIndex as number;
                 if (options.mapIndex.midIndex)
                     midIndex = options.mapIndex.midIndex;
-                
+
                 if (startIndex && startIndex > gameEvents.length)
                     throw new Err("invalid-map-index-start", { index: startIndex, gameLength: gameEvents.length });
                 if (endIndex && endIndex > gameEvents.length)
@@ -327,7 +334,7 @@ export namespace Flashlight {
                                 break;
                             }
                         }
-                        
+
                         if (!mapFound)
                             gameEvents.splice(i - 1, 1);
                     }
@@ -338,12 +345,20 @@ export namespace Flashlight {
                 mpLobby.playerList.first().team = Team.Red;
                 mpLobby.playerList.last().team = Team.Blue;
             }
-           
-            for (const game of gameEvents) {
+
+            let uniqueModeCount = 0;
+            let firstMode;
+            for (const [i, game] of gameEvents.entries()) {
                 let redTotalScore = 0;
                 let blueTotalScore = 0;
                 const scores = [];
-                mpLobby.gameMode[game.mode] = true;
+
+                if (mpLobby.gameModeList[game.mode] === false) {
+                    uniqueModeCount++;
+                    mpLobby.gameModeList[game.mode] = true;
+                    if (i === 0)
+                        firstMode = game.mode;
+                }
 
                 if (mpLobby.teamType === TeamType.Unknown)
                     mpLobby.teamType = game.team_type;
@@ -359,10 +374,12 @@ export namespace Flashlight {
                     if (score.score > 1000) {
                         if (score.mods.length > 0) {
                             for (const mod of score.mods) {
-                                score.score *= modEnum[mod];
-                                if (score.score === 0) {
-                                    // having one 0 points score results in 0 match cost for the whole match
-                                    score.score = 1;
+                                if (modEnum.hasOwnProperty(mod)) {
+                                    score.score *= modEnum[mod];
+                                    if (score.score === 0) {
+                                        // having one 0 points score results in 0 match cost for the whole match
+                                        score.score = 1;
+                                    }
                                 }
                             }
                         }
@@ -378,7 +395,7 @@ export namespace Flashlight {
                             const user = mpLobby.playerList.get(score.user_id);
                             if (user?.team === Team.Red)
                                 redTotalScore += score.score;
-                                
+
                             if (user?.team === Team.Blue)
                                 blueTotalScore += score.score;
                         }
@@ -419,6 +436,12 @@ export namespace Flashlight {
                 if (scoreSum)
                     player.matchCost = scoreSum * (player.mapAmount / mpLobby.medianLobby) ** (1 / 3);
             });
+
+            if (uniqueModeCount > 1)
+                mpLobby.gameMode = "multiple";
+            else if (uniqueModeCount === 1)
+                mpLobby.gameMode = firstMode as string;
+
             return mpLobby;
         }
 

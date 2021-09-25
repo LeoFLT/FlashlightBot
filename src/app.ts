@@ -12,13 +12,9 @@ for (const file of commandFiles) {
     try {
         const command: Flashlight.Command = require(`${__dirname}/commands/${file}`).command;
         client.addCommand(command.name, command);
-        if ('aliases' in command) {
-            if (command.aliases.length > 0)
-            command.aliases.forEach(alias => client.addCommand(alias, command));    
-        }
         Logger.info(`Loaded command: ${file}`);
     } catch (e: any) {
-        Logger.error(e.message);
+        Logger.error(`${file}: ${e.message}`);
     }
 }
 
@@ -33,3 +29,4 @@ for (const file of eventFiles) {
 }
 
 client.login(config.discord.token);
+client.prefixes.on("error", err => Logger.error("Keyv: " + err));
