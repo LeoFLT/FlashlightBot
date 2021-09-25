@@ -3,7 +3,6 @@ import Logger from "../utils/logger";
 import parser from "../utils/parser";
 import { Flashlight } from "../classes/Flashlight";
 import { Message as DiscordMessage } from "discord.js";
-import Keyv from "keyv";
 
 export const event: Flashlight.Event = {
     name: "messageCreate",
@@ -44,7 +43,8 @@ export const event: Flashlight.Event = {
             return;
 
         if (command.hasArgs && !!!args.size) {
-            return message.reply("No arguments provided");
+            const helpCmd = client.commands.get('help');
+            return helpCmd?.execute(client, args, [command.name], message);
         }
 
         try {

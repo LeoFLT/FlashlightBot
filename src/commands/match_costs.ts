@@ -16,7 +16,7 @@ export const command: Flashlight.Command = {
         + "(`o` | `option`): one of `o` or `option`\n"
         + "all options to this command are case-insensitive",
     example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HD=0.91 -rx=0",
-    hasArgs: false,
+    hasArgs: true,
     async execute(client, args, message: DiscordMessage) {
         if (!args)
             return message.reply("No arguments provided");
