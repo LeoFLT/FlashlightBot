@@ -2,15 +2,14 @@
   "name": "flashlight_rewrite",
   "author": "LeoFLT",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/app.js",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "start": "node dist/app.js",
+    "prod:start": "NODE_ENV=production node dist/app.js",
+    "prod:build": "tsc",
     "dev:jit": "ts-node src/app.ts",
-    "dev:start": "nodemon dist/app.js",
-    "compile:start": "npm run build && node dist/app.js"
+    "dev:watch": "tsc -w",
+    "dev:start": "nodemon dist/app.js"
   },
   "devDependencies": {
     "@types/node": "^15.12.4",

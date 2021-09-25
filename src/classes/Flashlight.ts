@@ -20,13 +20,75 @@ export namespace Flashlight {
             [key in LobbyMod]?: number;
         }
         export type Return = {
-            playerList: Map<number, User>;
+            lobbyInfo: Match["match"],
+            playerList: UserMap;
             teamType: TeamType;
-            gameList: Map<number, { medianScore: number }>;
+            gameList: GameMap;
             teamScores?: { red: number, blue: number };
             medianLobby: number;
             gameMode: { osu: boolean, taiko: boolean, mania: boolean, fruits: boolean }
         }
+    }
+    export class UserMap extends Map<number, User> {
+        #elements: User[];
+        constructor() {
+            super();
+            this.#elements = [];
+        }
+        private _updateElements() {
+            const elList = [];
+            for (const [_, V] of this.entries())
+                elList.push(V);
+            this.#elements = [...elList];
+        }
+        public first() {
+            this._updateElements();
+            return this.#elements[0];
+        }
+        public last() {
+            this._updateElements();
+            return this.#elements[this.#elements.length - 1];
+        }
+    }
+
+    export class GameMap extends Map<number, any> {
+        #elements: Game[] | any[];
+        constructor() {
+            super();
+            this.#elements = [];
+        }
+        private _updateElements() {
+            const elList = [];
+            for (const [_, V] of this.entries())
+                elList.push(V);
+            this.#elements = [...elList];
+        }
+        public first() {
+            this._updateElements();
+            return this.#elements[0];
+        }
+        public last() {
+            this._updateElements();
+            return this.#elements[this.#elements.length - 1];
+        }
+    }
+
+    export class Err extends Error {
+        public isFlashlightError: true;
+        private _details?: any;
+
+        constructor (message: string, details?: (Object | { index: number, gameLength: number })) {
+            super(message);
+            this.isFlashlightError = true;
+
+            if (details)
+                this._details = details;
+        }
+
+        get details() {
+            return this._details;
+        }
+
     }
 
     export interface OsuOptions {
@@ -152,16 +214,19 @@ export namespace Flashlight {
             const lobbyIdMatch = lobby.match(/(?:https:\/\/osu\.ppy\.sh\/(?:community\/matches\/|mp\/))?(\d{3,15})\/?/);
 
             if (!Array.isArray(lobbyIdMatch))
-                throw new Error("no-regex-match");
+                throw new Err("no-regex-match");
 
             const lobbyId = lobbyIdMatch[1];
             const req = await this.osuRequest(`matches/${lobbyId}`);
 
             if (!req.ok)
-                throw new Error("api-call-fail-not-200");
+                throw new Err("api-call-fail-not-200", req);
 
             const res: Match = await req.json();
-            const playerListMap = new Map<User["id"], User>();
+            const playerList = new UserMap();
+            let lobbyInfo = res.match;
+            lobbyInfo.start_time = new Date(lobbyInfo.start_time);
+            lobbyInfo.end_time = new Date(lobbyInfo.end_time);
 
             if (res.events[0].detail.type !== EventType.MatchCreated) {
                 // we're missing data, query again
@@ -172,38 +237,42 @@ export namespace Flashlight {
                     eventIdCursor = res.events[0].id;
                 } else if (eventIdCursor === res.events[0].id) {
                     // nothing changed, no way to recover
-                    throw new Error("api-call-fail-no-change");
+                    throw new Err("api-call-fail-no-change", res);
                 }
                 const newReq = await this.osuRequest(`matches/${lobbyId}?before=${res.events[0].id}`);
                 if (!req.ok)
-                    throw new Error("api-call-fail-not-200");
+                    throw new Err("api-call-fail-not-200", req);
                 const newRes: Match = await newReq.json();
                 res.events.unshift(...newRes.events);
             }
+
+
             for (const player of res.users) {
-                playerListMap.set(player.id, {
+                playerList.set(player.id, {
                     ...player,
+                    usernameMdSafe: player.username.replace(/([-\[\]~_])/g, "\\$1"),
                     mapAmount: 0,
                     matchCost: 0,
                     scores: []
                 });
             }
 
-            if (playerListMap.size === 2) {
+            if (playerList.size === 2) {
                 let i = 0;
-                for (const [K, V] of playerListMap.entries()) {
+                for (const [K, V] of playerList.entries()) {
                     if (i === 0) {
-                        playerListMap.set(K, { ...V, team: Team.Red });
+                        playerList.set(K, { ...V, team: Team.Red });
                         i++;
                     }
-                    playerListMap.set(K, { ...V, team: Team.Blue });
+                    playerList.set(K, { ...V, team: Team.Blue });
                 }
             }
 
             const mpLobby = {
-                playerList: playerListMap,
-                teamType: playerListMap.size === 2 ? TeamType.OneVS : TeamType.Unknown,
-                gameList: new Map<User["id"], any>(),
+                lobbyInfo,
+                playerList: playerList,
+                teamType: playerList.size === 2 ? TeamType.OneVS : TeamType.Unknown,
+                gameList: new GameMap(),
                 teamScores: { "red": 0, "blue": 0 },
                 medianLobby: 0,
                 gameMode: {
@@ -232,22 +301,22 @@ export namespace Flashlight {
                     midIndex = options.mapIndex.midIndex;
                 
                 if (startIndex && startIndex > gameEvents.length)
-                    throw new Error("invalid-map-index-start");
+                    throw new Err("invalid-map-index-start", { index: startIndex, gameLength: gameEvents.length });
                 if (endIndex && endIndex > gameEvents.length)
-                    throw new Error("invalid-map-index-end");
+                    throw new Err("invalid-map-index-end", { index: endIndex, gameLength: gameEvents.length });
                 if (startIndex && endIndex && startIndex + endIndex >= gameEvents.length)
-                    throw new Error("invalid-map-index-sum");
+                    throw new Err("invalid-map-index-sum", { index: startIndex + endIndex, gameLength: gameEvents.length });
                 if (startIndex)
                     gameEvents = gameEvents.slice(startIndex);
                 if (endIndex) {
                     if (gameEvents.length <= endIndex)
-                        throw new Error("invalid-map-index-end");
+                        throw new Err("invalid-map-index-end", { index: endIndex, gameLength: gameEvents.length });
 
                     gameEvents = gameEvents.slice(0, -endIndex);
                 }
                 if (midIndex) {
                     if (gameEvents.length <= midIndex.length)
-                        throw new Error("invalid-map-index-mid");
+                        throw new Err("invalid-map-index-mid", { index: midIndex.length, gameLength: gameEvents.length });
 
                     for (const i of midIndex) {
                         let mapFound = false;
@@ -265,6 +334,11 @@ export namespace Flashlight {
                 }
             }
 
+            if (mpLobby.teamType === TeamType.OneVS) {
+                mpLobby.playerList.first().team = Team.Red;
+                mpLobby.playerList.last().team = Team.Blue;
+            }
+           
             for (const game of gameEvents) {
                 let redTotalScore = 0;
                 let blueTotalScore = 0;
@@ -276,52 +350,57 @@ export namespace Flashlight {
 
                 for (const score of game.scores) {
                     const player = mpLobby.playerList.get(score.user_id);
-                    if (!player) continue;
+                    if (!player)
+                        continue;
 
                     if (mpLobby.teamType !== TeamType.OneVS)
                         player.team = score.match.team;
 
                     if (score.score > 1000) {
-                        if (typeof modEnum.NM === "number")
-                            score.score *= modEnum.NM;
-                        if (mpLobby.teamType === TeamType.TeamVS) {
-                            if (score.match.team === Team.Red)
-                                redTotalScore += score.score;
-                            if (score.match.team === Team.Blue)
-                                blueTotalScore += score.score;
-                        }
-
                         if (score.mods.length > 0) {
                             for (const mod of score.mods) {
-                                const currMod = modEnum[mod];
-                                if (currMod) {
-                                    score.score *= currMod;
+                                score.score *= modEnum[mod];
+                                if (score.score === 0) {
+                                    // having one 0 points score results in 0 match cost for the whole match
+                                    score.score = 1;
                                 }
                             }
                         }
+
+                        if (mpLobby.teamType === TeamType.TeamVS) {
+                            if (score.match.team === Team.Red)
+                                redTotalScore += score.score;
+
+                            if (score.match.team === Team.Blue)
+                                blueTotalScore += score.score;
+                        }
+                        else if (mpLobby.teamType === TeamType.OneVS) {
+                            const user = mpLobby.playerList.get(score.user_id);
+                            if (user?.team === Team.Red)
+                                redTotalScore += score.score;
+                                
+                            if (user?.team === Team.Blue)
+                                blueTotalScore += score.score;
+                        }
+
                         scores.push(score.score);
                         player.scores.push({ id: game.id, score: score.score });
+
                         if (mpLobby.teamType === TeamType.TeamVS) {
                             if (player?.team && player.team !== Team.None)
                                 player.team = score.match.team;
                         }
-                        else if (mpLobby.teamType === TeamType.OneVS) {
-                            if (player.team === Team.Red)
-                                player.team = Team.Red;
-                            player.team = Team.Blue;
-                        }
+
                         player.mapAmount++;
                     }
                 }
                 mpLobby.gameList.set(game.id, { medianScore: median(scores) });
-                if (mpLobby.teamType === TeamType.TeamVS) {
+                if (mpLobby.teamType === TeamType.TeamVS || mpLobby.teamType === TeamType.OneVS) {
                     if (redTotalScore > blueTotalScore)
                         mpLobby.teamScores.red++;
 
                     if (blueTotalScore > redTotalScore)
                         mpLobby.teamScores.blue++;
-                }
-                else if (mpLobby.teamType === TeamType.OneVS) {
                 }
             }
 

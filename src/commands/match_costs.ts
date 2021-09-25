@@ -1,8 +1,8 @@
 import { Flashlight } from "../classes/Flashlight";
 import { round } from "../utils/math"
+import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { Message as DiscordMessage } from "discord.js";
-import createErrorMessage from "../utils/createErrorMessage";
+import { Message as DiscordMessage, MessageEmbed } from "discord.js";
 
 export const command: Flashlight.Command = {
     name: "match_costs",
@@ -20,38 +20,24 @@ export const command: Flashlight.Command = {
         if (!matchRegex?.id)
             return message.reply("Invalid MP link format");
 
-        let options: Record<string, any> = { mapIndex: {}, multipliers: {}};
+        let options: Record<string, any> = { mapIndex: {}, multipliers: {} };
 
-        if (args?.im || args?.ignore_middle) {
-            if (Array.isArray(args?.im))
-                options.mapIndex.midIndex = args.im;
-            else if (Array.isArray(args?.ignore_middle))
-                options.mapIndex.midIndex = args.ignore_middle;
-            else if (typeof args?.im === "number")
-                options.mapIndex.midIndeX = [args.im];
-            else if (typeof args?.ignore_middle === "number")
-                options.mapIndex.midIndex = [args.ignore_middle];
+        if (args?.i || args?.ignore) {
+            if (Array.isArray(args?.i))
+                options.mapIndex.midIndex = args.i;
+            else if (Array.isArray(args?.ignore))
+                options.mapIndex.midIndex = args.ignore;
+            else if (typeof args?.i === "number")
+                options.mapIndex.midIndex = [args.i];
+            else if (typeof args?.ignore === "number")
+                options.mapIndex.midIndex = [args.ignore];
         }
 
         if (typeof matchRegex?.startIndex === "string") {
             options.mapIndex.startIndex = parseInt(matchRegex.startIndex) || 0;
 
             if (matchRegex?.endIndex)
-               options.mapIndex.endIndex = parseInt(matchRegex.endIndex) || 0;
-        }
-        else {
-            if (args?.i || args?.ignore) {
-                if (Array.isArray(args?.i)) {
-                    options.mapIndex.startIndex = args.i[0];
-                    options.mapIndex.endIndex = args.i[1];
-                }
-                else if (Array.isArray(args?.ignore)) {
-                    options.mapIndex.startIndex = args.ignore[0];
-                    options.mapIndex.endIndex = args.ignore[1];
-                }
-                else if (typeof args?.i === "number" || typeof args?.ignore === "number")
-                    options.mapIndex.startIndex = args.i || args?.ignore;
-            }
+                options.mapIndex.endIndex = parseInt(matchRegex.endIndex) || 0;
         }
 
         for (const arg in args)
@@ -60,83 +46,101 @@ export const command: Flashlight.Command = {
                     options.multipliers[arg.toUpperCase()] = args[arg];
 
         let res: Flashlight.MatchCosts.Return;
-        
-        try { 
+
+        try {
             res = await client.fetchMultiplayer(matchRegex.id, options);
         }
         catch (e: any) {
-            console.log(e.message);
-            switch (e.message) {
-                case "api-call-fail-not-200":
-                    return message.reply("Unable to find a lobby that matches this ID");
-                case "invalid-map-index-start":
-                    return message.reply("Error: you are trying to remove more maps than were played in the lobby (start index)");
-                case "invalid-map-index-mid":
-                    return message.reply("Error: you are trying to remove more maps than were played in the lobby (mid index)")
-                case "invalid-map-index-end":
-                    return message.reply("Error: you are trying to remove more maps than were played in the lobby (end index)");
-                case "invalid-map-index-sum":
-                    return message.reply("Error: the amount of maps removed from the calculation must be smaller than the amount of maps that were played");
-                default:
-                    return message.reply("An unknown error has occurred. Please try again.");
+            let err;
+            if (e?.isFlashlightError)
+                err = e as Flashlight.Err;
+            if (err && err?.details) {
+                switch (err.message) {
+                    case "api-call-fail-not-200":
+                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: Unable to find a lobby that matches this ID")] });
+                    case "invalid-map-index-start":
+                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the start of a lobby lobby with **${err.details.gameLength}** games)`)] });
+                    case "invalid-map-index-mid":
+                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
+                    case "invalid-map-index-end":
+                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the end of a lobby lobby with **${err.details.gameLength}** games)`)] });
+                    case "invalid-map-index-sum":
+                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: the amount of maps removed from the calculation must be smaller than the amount of maps that were played (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
+                }
             }
+            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("An unknown error has occurred. Please try again.")] });
         }
 
-        const warmupCountTest = (w: number, start: boolean) => w === 1 ? 'Ignoring the ' + (start ? 'first' : 'last') + ' map\n' : w === 2 ?
-        'Ignoring the ' + (start ? 'first' : 'last') + ' two maps\n' : 'Ignoring the ' + (start ? 'first ' : 'last ') + w + ' maps\n';
-
         let playerList: User[] = [];
-        res.playerList.forEach(player => player.matchCost ? playerList.push(player) : undefined);
+        res.playerList.forEach(player => player.matchCost > 0 ? playerList.push(player) : undefined);
         playerList.sort((a, b) => b.matchCost - a.matchCost);
 
+        let opts: Record<string, any> = {};
+        if (options?.mapIndex)
+            opts.warmups = options.mapIndex;
+
+        if (options?.multipliers)
+            opts.mods = options.multipliers;
 
         // TODO: implement all cases (use a helper function, maybe?)
-        switch (res.teamType) {
-            case TeamType.HeadToHead: {
-                let finalStrArr: string[] = [];
-                for (const [i, player] of playerList.entries())
-                    finalStrArr.push(`\`${i + 1 < 10 ? " " : ""}${i + 1}.\`\u200B\`${round(player.matchCost, 4)}\` • [${player.username}](https://osu.ppy.sh/users/${player.id})`);
-                
-                const halfPoint = Math.ceil(finalStrArr.length / 2);
-                let finalStr1 = finalStrArr.slice(0, halfPoint);
-                let finalStr2 = finalStrArr.slice(-(halfPoint + finalStrArr.length % 2 === 0 ? 1 : 0));
-
-                return message.reply(finalStr1.join("\n")), message.reply(finalStr2.join("\n"));
-            }
-
-            case TeamType.TeamVS: {
-                let indexRed = 0, indexBlue = 0, playerListRed: string[] = [], playerListBlue: string[] = []; 
-                
-                for (const [i, player] of playerList.entries()) {
-                    console.log(player.team);
-                    if (player.team === Team.Red) {
-                        indexRed++;
-                        playerListRed.push(`\`${indexRed < 10 ? " " : ""}${indexRed}.\`\u200B\`${round(player.matchCost, 4)}\` • [${player.username}](https://osu.ppy.sh/users/${player.id}) (#${i + 1})`);
+        try {
+            switch (res.teamType) {
+                case TeamType.HeadToHead: {
+                    let finalStrArr: string[] = [];
+                    for (const player of playerList) {
+                        finalStrArr.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id})`);
                     }
 
-                    if (player.team === Team.Blue) {
-                        indexBlue++;
-                        playerListBlue.push(`\`${indexBlue < 10 ? " " : ""}${indexBlue}.\`\u200B\`${round(player.matchCost, 4)}\` • [${player.username}](https://osu.ppy.sh/users/${player.id}) (#${i + 1})`);
+                    const halfPoint = Math.ceil(finalStrArr.length / 2);
+                    const finalStr1 = finalStrArr.splice(0, halfPoint);
+                    const finalStr2 = finalStrArr;
+
+                    const embed = createMCEmbed(res, { red: finalStr1, blue: finalStr2 }, opts);
+
+                    return message.reply(embed);
+                }
+
+                case TeamType.TeamVS: {
+                    let indexRed = 0, indexBlue = 0, playerListRed: string[] = [], playerListBlue: string[] = [];
+
+                    for (const [i, player] of playerList.entries()) {
+                        if (player.team === Team.Red) {
+                            indexRed++;
+                            playerListRed.push(`\`${indexRed < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                        }
+
+                        if (player.team === Team.Blue) {
+                            indexBlue++;
+                            playerListBlue.push(`\`${indexBlue < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                        }
                     }
+
+                    const finalStrRed = playerListRed;
+                    const finalStrBlue = playerListBlue;
+
+                    const embed = createMCEmbed(res, { red: finalStrRed, blue: finalStrBlue }, opts);
+
+                    return message.reply(embed);
                 }
 
-                let finalStrRed = playerListRed.join("\n");
-                let finalStrBlue = playerListBlue.join("\n");
-                return message.reply(finalStrRed), message.reply(finalStrBlue);
-            }
+                case TeamType.OneVS: {
+                    let playerRed: string = "", playerBlue: string = "";
+                    let firstPlayer = playerList[0].id;
 
-            case TeamType.OneVS: {
-                let playerListRed: string[] = [], playerListBlue: string[] = []; 
-                
-                for (const [i, player] of playerList.entries()) {
-                    if (player.team === Team.Red) 
-                        playerListRed.push(`\`${i + 1}.\`\u200B\`${round(player.matchCost, 4)}\` • [${player.username}](https://osu.ppy.sh/users/${player.id})`);
+                    for (const [i, player] of playerList.entries()) {
+                        if (player.id === firstPlayer)
+                            playerRed = `\`${i + 1}.\`\u200B\`${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id})`;
+                        else
+                            playerBlue = `\`${i + 1}.\`\u200B\`${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id})`;
+                    }
 
-                    if (player.team === Team.Blue)
-                        playerListBlue.push(`\`${i + 1}.\`\u200B\`${round(player.matchCost, 4)}\` • [${player.username}](https://osu.ppy.sh/users/${player.id})`);
-                
+                    const embed = createMCEmbed(res, { red: [playerRed], blue: [playerBlue] }, opts);
+
+                    return message.reply(embed);
                 }
             }
+        } catch (e: any) {
+            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: too many players in that lobby to calculate.")] })
         }
     }
 }

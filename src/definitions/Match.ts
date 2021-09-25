@@ -1,5 +1,5 @@
 export interface Match {
-    match:           MatchMatch;
+    match:           MatchInfo;
     events:          EventType[];
     users:           User[];
     first_event_id:  number;
@@ -146,10 +146,10 @@ export interface Statistics {
     count_miss: number;
 }
 
-export interface MatchMatch {
+export interface MatchInfo {
     id:         number;
-    start_time: string;
-    end_time:   string;
+    start_time: Date;
+    end_time:   Date;
     name:       string;
 }
 
@@ -167,10 +167,12 @@ export interface User {
     pm_friends_only: boolean;
     profile_colour:  null | string;
     username:        string;
+    usernameMdSafe:  string;
     country:         Country;
     mapAmount:       number;
     matchCost:       number;
     scores:          { id: number, score: number }[];
+    finalScore?:     number;
     team?:           Team;
 }
 
