@@ -68,9 +68,9 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
     if (lobby.teamType === TeamType.TeamVS) {
         embed.addField("Final Score:",
         isTie ?
-            `:small_red_triangle: Red Team: \u200B \u200B \`${lobby.teamScores?.red}\`\n:small_blue_diamond: Blue Team: \`${lobby.teamScores?.blue}\``
+            `**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
             : redIsWinner ? 
-                `**:small_red_triangle: __Red Team:__** \u200B \u200B \`${lobby.teamScores?.red}\`\n:small_blue_diamond: Blue Team: \`${lobby.teamScores?.blue}\``
+                `**:small_red_triangle: __Red Team:__** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
                 : `**:small_blue_diamond: __Blue Team:__** \`${lobby.teamScores?.blue}\`\n**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\``
         )
     }

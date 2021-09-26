@@ -42,7 +42,7 @@ export const event: Flashlight.Event = {
         if (!command)
             return;
 
-        if (command.hasArgs && !!!args.size) {
+        if (command.hasArgs && (!!!args.size && !!!strArgs.length)) {
             const helpCmd = client.commands.get('help');
             return helpCmd?.execute(client, args, [command.name], message);
         }
