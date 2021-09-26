@@ -12,15 +12,15 @@ export const event: Flashlight.Event = {
             return;
 
         if (message.guild && message.mentions.users.first()?.id === client.user?.id && client?.user?.id) {
-            const newPrefix = /(prefix)(?:(\s+|:\s+)(.{1,3}))?/.exec(message.content);
+            const newPrefix = /(prefix)(?:(?:\s+|:\s+)(.{1,3}))?/.exec(message.content);
             
-            if (newPrefix && newPrefix[2]) {
+            if (newPrefix  && newPrefix[1] && newPrefix[2]) {
                 await client.prefixes.set(message.guild.id, newPrefix[2]);
                 return message.reply(`Prefix set to \`${newPrefix[2]}\``);
             }
 
             if (newPrefix && newPrefix[1])
-                return message.reply(`Flashlight's prefix for this guild is \`${await client.prefixes.get(message.guild.id) || config.discord.prefix}\``)
+                return message.reply(`Flashlight's prefix for this guild is \`${await client.prefixes.get(message.guild.id) || config.discord.prefix}\``);
             
         }
 
