@@ -16,7 +16,7 @@ export const command: Flashlight.Command = {
         + "(`o` | `option`): one of `o` or `option`\n"
         + "all options to this command are case-insensitive"
         + "(`i` | `ignore`): ignore games using a beatmap id or position relative to the first map of the match",
-    example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HD=0.91 -rx=0",
+    example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HR=0.91 -rx=0",
     hasArgs: true,
     async execute(client, args, message: DiscordMessage) {
         if (!args)
