@@ -114,12 +114,12 @@ export const command: Flashlight.Command = {
                     for (const [i, player] of playerList.entries()) {
                         if (player.team === Team.Red) {
                             indexRed++;
-                            playerListRed.push(`\`${indexRed < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                            playerListRed.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
                         }
 
                         if (player.team === Team.Blue) {
                             indexBlue++;
-                            playerListBlue.push(`\`${indexBlue < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                            playerListBlue.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
                         }
                     }
 

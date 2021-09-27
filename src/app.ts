@@ -4,7 +4,7 @@ import { Flashlight } from "./classes/Flashlight";
 import { readdirSync } from "fs";
 import { Intents } from "discord.js";
 
-const client = new Flashlight.Client ({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES], partials: ['CHANNEL']});
+const client = new Flashlight.Client ({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES], partials: ['CHANNEL']});
 const commandFiles = readdirSync(`${__dirname}/commands`).filter(file => file.endsWith('.js'));
 const eventFiles = readdirSync(`${__dirname}/events`).filter((file) => file.endsWith('.js'));
 
