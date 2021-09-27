@@ -48,7 +48,7 @@ export const event: Flashlight.Event = {
         }
 
         try {
-            if (commandName === "prefix" || commandName === "help")
+            if (command.name === "prefix" || command.name === "help")
                 command.execute(client, args, strArgs, message);
             else
                 command.execute(client, args, message); 
