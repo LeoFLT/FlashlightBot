@@ -16,11 +16,20 @@ export const event: Flashlight.Event = {
             
             if (newPrefix  && newPrefix[1] && newPrefix[2]) {
                 await client.prefixes.set(message.guild.id, newPrefix[2]);
-                return message.reply(`Prefix set to \`${newPrefix[2]}\``);
+                try {
+                    return message.reply(`Prefix set to \`${newPrefix[2]}\``);
+                } catch (e: any) {
+                    return Logger.error(e?.message);
+                }
             }
 
-            if (newPrefix && newPrefix[1])
-                return message.reply(`Flashlight's prefix for this guild is \`${await client.prefixes.get(message.guild.id) || config.discord.prefix}\``);
+            if (newPrefix && newPrefix[1]) {
+                try {
+                    return message.reply(`Flashlight's prefix for this guild is \`${await client.prefixes.get(message.guild.id) || config.discord.prefix}\``);
+                } catch (e: any) {
+                    return Logger.error(e?.message);
+                }
+            }
             
         }
 
