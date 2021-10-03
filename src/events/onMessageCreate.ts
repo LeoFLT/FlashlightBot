@@ -2,7 +2,12 @@ import config from "../config/envVars";
 import Logger from "../utils/logger";
 import parser from "../utils/parser";
 import { Flashlight } from "../classes/Flashlight";
-import { Message as DiscordMessage } from "discord.js";
+import { Message as DiscordMessage, Permissions } from "discord.js";
+const bitField = new Permissions([
+    Permissions.FLAGS.EMBED_LINKS,
+    Permissions.FLAGS.VIEW_CHANNEL,
+    Permissions.FLAGS.SEND_MESSAGES
+]);
 
 export const event: Flashlight.Event = {
     name: "messageCreate",
@@ -10,6 +15,9 @@ export const event: Flashlight.Event = {
     async execute(client, message: DiscordMessage) {
         if (message.author.bot)
             return;
+        if (message.channel.type === "GUILD_TEXT" || message.channel.type === "GUILD_NEWS")
+            if (message.guild?.me && !message.channel.permissionsFor(message.guild.me).has(bitField))
+                return;
 
         if (message.guild && message.mentions.users.first()?.id === client.user?.id && client?.user?.id) {
             const newPrefix = /(prefix)(?:(?:\s+|:\s+)(.{1,3}))?/.exec(message.content);
@@ -51,16 +59,13 @@ export const event: Flashlight.Event = {
         if (!command)
             return;
 
-        if (command.hasArgs && (!!!args.size && !!!strArgs.length)) {
+        if (command.hasArgs && (!args.size && !strArgs.length)) {
             const helpCmd = client.commands.get('help');
             return helpCmd?.execute(client, args, [command.name], message);
         }
 
         try {
-            if (command.name === "prefix" || command.name === "help")
-                command.execute(client, args, strArgs, message);
-            else
-                command.execute(client, args, message); 
+            command.execute(client, args, strArgs, message);
         } catch (e: any) {
             Logger.error(e.message);
             return message.reply("An unknown error has occurred. Please try again.");

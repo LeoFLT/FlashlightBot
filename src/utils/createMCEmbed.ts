@@ -25,21 +25,20 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
     let gameModeImg;
 
     switch (lobby.gameMode) {
-        case "osu":
+        case GameMode.Osu:
 			gameModeImg = 'https://i.imgur.com/fnRPSk2.png';
 			break;
-		case "taiko":
+		case GameMode.Taiko:
 			gameModeImg = 'https://i.imgur.com/LMaVI8A.png';
 			break;
-		case "fruits":
+		case GameMode.Catch:
 			gameModeImg = 'https://i.imgur.com/kftQ0tR.png';
 			break;
-		case "mania":
+		case GameMode.Mania:
 			gameModeImg = 'https://i.imgur.com/YHi4Mer.png';
 			break;
-		case "multiple":
+		default:
 			gameModeImg = 'https://i.imgur.com/t6zXMlG.png';
-			break;
     }
     embed.setAuthor(lobby.lobbyInfo.name, gameModeImg, `https://osu.ppy.sh/community/matches/${lobby.lobbyInfo.id}`);
 
@@ -81,14 +80,41 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
         embed.fields[0].name = "**Player List**";
     }
     else if (lobby.teamType === TeamType.OneVS || lobby.teamType === TeamType.TeamVS) {
-        embed
-        .addField(lobby.teamType === TeamType.TeamVS ? `:small_red_triangle: **Red Team** (${playerList.red.length})` : "\u200B", playerList.red.join("\n") || "\u200B", true)
-        .addField(lobby.teamType === TeamType.TeamVS ? `:small_blue_diamond:**Blue Team** (${playerList.blue.length})` : "\u200B", playerList.blue.join("\n") || "\u200B", true);
+        const embedHeaderRed = lobby.teamType === TeamType.TeamVS ? `:small_red_triangle: **Red Team** (${playerList.red.length})` : "\u200B";
+        const embedHeaderBlue = lobby.teamType === TeamType.TeamVS ? `:small_blue_diamond: **Blue Team** (${playerList.blue.length})` : "\u200B";
+        let embedIsTooBig = false;
+        let embedRedSplit: string[] = [], embedBlueSplit: string[] = [];
+        for (const team in playerList) {
+            if (team === "blue" || team === "red") {
+                if (playerList[team].join("\n").length > 1024) {
+                    embedIsTooBig = true;
+                    let newHalf = playerList[team].splice(0, Math.ceil(playerList[team].length / 2));
+                    if (team === "red")
+                        embedRedSplit = newHalf;
+                    else
+                        embedBlueSplit = newHalf;
+                }
+            }
+        }
+        if (embedIsTooBig) {
+            embed
+            .addField(embedHeaderRed, playerList.red.join("\n"), true)
+            .addField("\u200B","\u200B", true)
+            .addField(embedHeaderBlue, playerList.blue.join("\n"), true)
+            .addField("\u200B", embedRedSplit.join("\n"), true)
+            .addField("\u200B","\u200B", true)
+            .addField("\u200B", embedBlueSplit.join("\n"), true)
+        } else {
+            embed
+            .addField(embedHeaderRed, playerList.red.join("\n") || "\u200B", true)
+            .addField("\u200B","\u200B", true)
+            .addField(embedHeaderBlue, playerList.blue.join("\n") || "\u200B", true);
+        }
     }
 
     embed.addField("\u200B", "Played " + discordTimestamp(lobby.lobbyInfo.start_time) + " • " + discordTimestamp(lobby.lobbyInfo.start_time, "D"), false);
     let messageToSend = { embeds: [embed], allowedMentions: { repliedUser: options?.mention ? true : false } };
-    
+
     if (options?.warmups) {
         let start = options?.warmups?.startIndex;
         let middle = options?.warmups?.midIndex?.join(", ")

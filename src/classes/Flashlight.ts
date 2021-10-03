@@ -1,5 +1,5 @@
 import config from "../config/envVars";
-import { Match, Type as EventType, Game, Mod as LobbyMod, Team, TeamType, User } from "../definitions/Match";
+import { Match, Type as EventType, Game, GameMode, Mod as LobbyMod, Team, TeamType, User } from "../definitions/Match";
 import { median } from "../utils/math";
 import { parsedArgs } from "../utils/parser";
 import fetch from "node-fetch";
@@ -20,6 +20,17 @@ export namespace Flashlight {
         export type Mods = {
             [key in LobbyMod]?: number;
         }
+        export enum Error {
+            NoRegexMatch = "NoRegexMatch",
+            OsuApiCallFail = "OsuApiCallFail",
+            OsuApiCallFailNoChangeCursor = "OsuApiCallFailNoChangeCursor",
+            OsuTokenInvalid = "OsuTokenInvalid",
+            OsuTokenInvalidAfterRefresh = "OsuTokenInvalidAfterRefresh",
+            InvalidMapSliceIndexStart = "InvalidMapSliceIndexStart",
+            InvalidMapSliceIndexMid = "InvalidMapSliceIndexMid",
+            InvalidMapSliceIndexEnd = "InvalidMapSliceIndexEnd",
+            InvalidMapSliceIndexSum = "InvalidMapSliceIndexSum",
+        };
         export type Return = {
             lobbyInfo: Match["match"],
             playerList: UserMap;
@@ -27,8 +38,7 @@ export namespace Flashlight {
             gameList: GameMap;
             teamScores?: { red: number, blue: number };
             medianLobby: number;
-            gameModeList: { osu: boolean, taiko: boolean, mania: boolean, fruits: boolean };
-            gameMode: string | undefined;
+            gameMode: GameMode;
         }
     }
 
@@ -143,9 +153,11 @@ export namespace Flashlight {
             if (!this.osuTokenIsValid)
                 try {
                     await this.requestToken();
+                } catch (e: any) {
+                    throw new Error(MatchCosts.Error.OsuTokenInvalidAfterRefresh)
                 } finally {
                     if (!this.osuTokenIsValid)
-                        throw new Error("osu-token-invalid-after-refresh");
+                        throw new Error(MatchCosts.Error.OsuTokenInvalidAfterRefresh);
                 }
 
             const headers = {
@@ -181,7 +193,7 @@ export namespace Flashlight {
             this.osu.tokenInfo = res;
 
             if (!this.osu?.tokenInfo)
-                throw new Error("invalid-token-value");
+                throw new Error(MatchCosts.Error.OsuTokenInvalid);
 
             this.osu.tokenInfo.expires_at = new Date(Date.now() + (res.expires_in * 1000));
             return this.osu;
@@ -220,13 +232,13 @@ export namespace Flashlight {
             const lobbyIdMatch = lobby.match(/(?:https:\/\/osu\.ppy\.sh\/(?:community\/matches\/|mp\/))?(\d{3,15})\/?/);
 
             if (!Array.isArray(lobbyIdMatch))
-                throw new Err("no-regex-match");
+                throw new Err(MatchCosts.Error.OsuTokenInvalid);
 
             const lobbyId = lobbyIdMatch[1];
             const req = await this.osuRequest(`matches/${lobbyId}`);
 
             if (!req.ok)
-                throw new Err("api-call-fail-not-200", req);
+                throw new Err(MatchCosts.Error.OsuApiCallFail, req);
 
             const res: Match = await req.json();
             const playerList = new UserMap();
@@ -242,12 +254,12 @@ export namespace Flashlight {
                     This approach should (hopefully) minimize errors */
                     eventIdCursor = res.events[0].id;
                 } else if (eventIdCursor === res.events[0].id) {
-                    // nothing changed, no way to recover
-                    throw new Err("api-call-fail-no-change", res);
+                    // data has not changed when it was expected to, no way to recover
+                    throw new Err(MatchCosts.Error.OsuApiCallFailNoChangeCursor, res);
                 }
                 const newReq = await this.osuRequest(`matches/${lobbyId}?before=${res.events[0].id}`);
                 if (!req.ok)
-                    throw new Err("api-call-fail-not-200", req);
+                    throw new Err(MatchCosts.Error.OsuApiCallFail, req);
                 const newRes: Match = await newReq.json();
                 res.events.unshift(...newRes.events);
             }
@@ -281,13 +293,7 @@ export namespace Flashlight {
                 gameList: new GameMap(),
                 teamScores: { "red": 0, "blue": 0 },
                 medianLobby: 0,
-                gameModeList: {
-                    osu: false,
-                    taiko: false,
-                    mania: false,
-                    fruits: false,
-                },
-                gameMode: "unknown"
+                gameMode: GameMode.Unknown
             };
 
             let gameEvents: Game[] = [];
@@ -308,22 +314,22 @@ export namespace Flashlight {
                     midIndex = options.mapIndex.midIndex;
 
                 if (startIndex && startIndex > gameEvents.length)
-                    throw new Err("invalid-map-index-start", { index: startIndex, gameLength: gameEvents.length });
+                    throw new Err(MatchCosts.Error.InvalidMapSliceIndexStart, { index: startIndex, gameLength: gameEvents.length });
                 if (endIndex && endIndex > gameEvents.length)
-                    throw new Err("invalid-map-index-end", { index: endIndex, gameLength: gameEvents.length });
+                    throw new Err(MatchCosts.Error.InvalidMapSliceIndexEnd, { index: endIndex, gameLength: gameEvents.length });
                 if (startIndex && endIndex && startIndex + endIndex >= gameEvents.length)
-                    throw new Err("invalid-map-index-sum", { index: startIndex + endIndex, gameLength: gameEvents.length });
+                    throw new Err(MatchCosts.Error.InvalidMapSliceIndexSum, { index: startIndex + endIndex, gameLength: gameEvents.length });
                 if (startIndex)
                     gameEvents = gameEvents.slice(startIndex);
                 if (endIndex) {
                     if (gameEvents.length <= endIndex)
-                        throw new Err("invalid-map-index-end", { index: endIndex, gameLength: gameEvents.length });
+                        throw new Err(MatchCosts.Error.InvalidMapSliceIndexEnd, { index: endIndex, gameLength: gameEvents.length });
 
                     gameEvents = gameEvents.slice(0, -endIndex);
                 }
                 if (midIndex) {
                     if (gameEvents.length <= midIndex.length)
-                        throw new Err("invalid-map-index-mid", { index: midIndex.length, gameLength: gameEvents.length });
+                        throw new Err(MatchCosts.Error.InvalidMapSliceIndexMid, { index: midIndex.length, gameLength: gameEvents.length });
 
                     for (const i of midIndex) {
                         let mapFound = false;
@@ -346,19 +352,16 @@ export namespace Flashlight {
                 mpLobby.playerList.last().team = Team.Blue;
             }
 
-            let uniqueModeCount = 0;
-            let firstMode;
+            let modes: Set<GameMode> = new Set();
+
             for (const [i, game] of gameEvents.entries()) {
                 let redTotalScore = 0;
                 let blueTotalScore = 0;
                 const scores = [];
+                modes.add(game.mode);
 
-                if (mpLobby.gameModeList[game.mode] === false) {
-                    uniqueModeCount++;
-                    mpLobby.gameModeList[game.mode] = true;
-                    if (i === 0)
-                        firstMode = game.mode;
-                }
+                if (i === 0)
+                    mpLobby.gameMode = game.mode;
 
                 if (mpLobby.teamType === TeamType.Unknown)
                     mpLobby.teamType = game.team_type;
@@ -437,10 +440,8 @@ export namespace Flashlight {
                     player.matchCost = scoreSum * (player.mapAmount / mpLobby.medianLobby) ** (1 / 3);
             });
 
-            if (uniqueModeCount > 1)
-                mpLobby.gameMode = "multiple";
-            else if (uniqueModeCount === 1)
-                mpLobby.gameMode = firstMode as string;
+            if (modes.size > 1)
+                mpLobby.gameMode = GameMode.Multiple;
 
             return mpLobby;
         }

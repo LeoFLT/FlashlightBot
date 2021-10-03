@@ -40,6 +40,8 @@ export enum GameMode {
     Taiko = "taiko",
     Mania = "mania",
     Catch = "fruits",
+    Unknown = "unknown",
+    Multiple = "multiple",
 }
 export interface Game {
     id:           number;

@@ -1,9 +1,9 @@
+import Logger from "../utils/logger";
 import { Flashlight } from "../classes/Flashlight";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { Message as DiscordMessage, MessageEmbed } from "discord.js";
-
+import { Message as DiscordMessage, MessageEmbed, DiscordAPIError } from "discord.js";
 export const command: Flashlight.Command = {
     name: "match_costs",
     description: "Calculate match costs for a match",
@@ -18,7 +18,7 @@ export const command: Flashlight.Command = {
         + "(`i` | `ignore`): ignore games using a beatmap id or position relative to the first map of the match",
     example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HR=0.91 -rx=0",
     hasArgs: true,
-    async execute(client, args, message: DiscordMessage) {
+    async execute(client, args, _, message: DiscordMessage) {
         if (!args)
             return message.reply("No arguments provided");
         const matchRegex = message
@@ -65,15 +65,15 @@ export const command: Flashlight.Command = {
                 err = e as Flashlight.Err;
             if (err && err?.details) {
                 switch (err.message) {
-                    case "api-call-fail-not-200":
+                    case Flashlight.MatchCosts.Error.OsuApiCallFail:
                         return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: Unable to find a lobby that matches this ID")] });
-                    case "invalid-map-index-start":
+                    case Flashlight.MatchCosts.Error.InvalidMapSliceIndexStart:
                         return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the start of a lobby lobby with **${err.details.gameLength}** games)`)] });
-                    case "invalid-map-index-mid":
+                    case Flashlight.MatchCosts.Error.InvalidMapSliceIndexMid:
                         return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
-                    case "invalid-map-index-end":
+                    case Flashlight.MatchCosts.Error.InvalidMapSliceIndexEnd:
                         return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the end of a lobby lobby with **${err.details.gameLength}** games)`)] });
-                    case "invalid-map-index-sum":
+                    case Flashlight.MatchCosts.Error.InvalidMapSliceIndexSum:
                         return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: the amount of maps removed from the calculation must be smaller than the amount of maps that were played (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
                 }
             }
@@ -96,7 +96,7 @@ export const command: Flashlight.Command = {
                 case TeamType.HeadToHead: {
                     let finalStrArr: string[] = [];
                     for (const player of playerList) {
-                        finalStrArr.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id})`);
+                        finalStrArr.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id})`);
                     }
 
                     const halfPoint = Math.ceil(finalStrArr.length / 2);
@@ -114,12 +114,12 @@ export const command: Flashlight.Command = {
                     for (const [i, player] of playerList.entries()) {
                         if (player.team === Team.Red) {
                             indexRed++;
-                            playerListRed.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                            playerListRed.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id}) \`(#${i + 1})\``);
                         }
 
                         if (player.team === Team.Blue) {
                             indexBlue++;
-                            playerListBlue.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/users/${player.id}) \`(#${i + 1})\``);
+                            playerListBlue.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id}) \`(#${i + 1})\``);
                         }
                     }
 
@@ -148,7 +148,8 @@ export const command: Flashlight.Command = {
                 }
             }
         } catch (e: any) {
-            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: too many players in that lobby to calculate.")] })
+            Logger.error(e?.stack);
+            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: too many players in the lobby to calculate.")] })
         }
     }
 }

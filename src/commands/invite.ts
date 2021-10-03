@@ -6,7 +6,7 @@ export const command: Flashlight.Command = {
     description: "returns an invite to add Flashlight to other guilds",
     hasArgs: false,
     aliases: ["inv"],
-    execute(client, _, message) {
+    execute(client, _, __, message) {
         const botImageEmbed = new MessageAttachment("./assets/flashlight.png");
         const messageToSend = new MessageEmbed()
             .setColor("#b6268c")

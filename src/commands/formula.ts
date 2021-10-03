@@ -3,10 +3,10 @@ import { MessageAttachment, MessageEmbed } from "discord.js";
 
 export const command: Flashlight.Command = {
     name: "formula",
-    description: "Information about the formula used to calculate `match_cost`s",
+    description: "Information about the formula used to calculate `match_costs`",
     aliases: ["f"],
     hasArgs: false,
-    execute(clients, args, message) {
+    execute(clients, _, __, message) {
         const mcImageEmbed = new MessageAttachment("./assets/mc_formula.png");
         const messageToSend = new MessageEmbed()
         .setColor("#b6268c")
