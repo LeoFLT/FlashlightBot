@@ -12,7 +12,7 @@ export const command: Flashlight.Command = {
     example: "help",
     hasArgs: false,
     isHelp: true,
-    async execute(client, _, args, message) {
+    async execute(client, _, args, message, sendMsg: Function) {
         const messageToSend = new MessageEmbed().setColor("#b6268c");
         const prefix = await client.prefixes.get(message?.guild?.id) || config.discord.prefix;
         let largestLen = 0;
@@ -33,14 +33,14 @@ export const command: Flashlight.Command = {
                 .setDescription(`Use ${prefix}help command_name to get detailed information about a certain command.`);
             messageToSend.addFields(...embedFields);
              
-            return message.reply({ embeds: [messageToSend] });
+            return sendMsg({ embeds: [messageToSend] });
         }
         const name = args[0].toLowerCase();
         const command = client.commands.get(name)
             || client.commands.find((c) => c.aliases && c.aliases.includes(name));
 
         if (!command) {
-            return message.reply(`\`${name}\` is not a valid command/alias.`);
+            return sendMsg(`\`${name}\` is not a valid command/alias.`);
         }
         messageToSend.addField("**Name**", command.name, true);
 
@@ -56,6 +56,6 @@ export const command: Flashlight.Command = {
         if (command.example)
             messageToSend.addField("**Example**", `${prefix}${command.name} ${command.example}`, false);
         
-            return message.reply({ embeds: [messageToSend] });
+            return sendMsg({ embeds: [messageToSend] });
     },
 };

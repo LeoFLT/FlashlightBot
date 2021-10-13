@@ -20,7 +20,7 @@ export const command: Flashlight.Command = {
         + "(`i` | `ignore`): ignore games using a beatmap id or position relative to the first map of the match",
     example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HR=0.91 -rx=0",
     hasArgs: true,
-    async execute(client, args, _, message: DiscordMessage) {
+    async execute(client, args, _, message: DiscordMessage, sendMsg: Function) {
         if (!args)
             return message.reply("No arguments provided");
         const matchRegex = message
@@ -57,20 +57,6 @@ export const command: Flashlight.Command = {
                     options.multipliers[arg.toUpperCase()] = args[arg];
 
         let res: Flashlight.MatchCosts.Return;
-        let useReply = false;
-        if (message.channel.type !== "DM") {
-            if (message?.guild?.me)
-                useReply = message.channel.permissionsFor(message?.guild?.me).has(bitFieldReply);
-        } else {
-            useReply = true;
-        }
-
-        const sendMsg = ((opts: string | MessagePayload | ReplyMessageOptions) => {
-            if (useReply)
-                return message.reply(opts);
-            else
-                return message.channel.send(opts);
-        });
         
         try {
             res = await client.fetchMultiplayer(matchRegex.id, options);
