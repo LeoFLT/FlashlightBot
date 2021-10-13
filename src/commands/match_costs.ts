@@ -3,7 +3,9 @@ import { Flashlight } from "../classes/Flashlight";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { Message as DiscordMessage, MessageEmbed, DiscordAPIError } from "discord.js";
+import { Message as DiscordMessage, MessageEmbed, MessagePayload, ReplyMessageOptions, Permissions } from "discord.js";
+const bitFieldReply = new Permissions([Permissions.FLAGS.READ_MESSAGE_HISTORY]);
+
 export const command: Flashlight.Command = {
     name: "match_costs",
     description: "Calculate match costs for a match",
@@ -55,7 +57,21 @@ export const command: Flashlight.Command = {
                     options.multipliers[arg.toUpperCase()] = args[arg];
 
         let res: Flashlight.MatchCosts.Return;
+        let useReply = false;
+        if (message.channel.type !== "DM") {
+            if (message?.guild?.me)
+                useReply = message.channel.permissionsFor(message?.guild?.me).has(bitFieldReply);
+        } else {
+            useReply = true;
+        }
 
+        const sendMsg = ((opts: string | MessagePayload | ReplyMessageOptions) => {
+            if (useReply)
+                return message.reply(opts);
+            else
+                return message.channel.send(opts);
+        });
+        
         try {
             res = await client.fetchMultiplayer(matchRegex.id, options);
         }
@@ -66,18 +82,18 @@ export const command: Flashlight.Command = {
             if (err && err?.details) {
                 switch (err.message) {
                     case Flashlight.MatchCosts.Error.OsuApiCallFail:
-                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: Unable to find a lobby that matches this ID")] });
+                        return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: Unable to find a lobby that matches this ID")] });
                     case Flashlight.MatchCosts.Error.InvalidMapSliceIndexStart:
-                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the start of a lobby lobby with **${err.details.gameLength}** games)`)] });
+                        return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the start of a lobby lobby with **${err.details.gameLength}** games)`)] });
                     case Flashlight.MatchCosts.Error.InvalidMapSliceIndexMid:
-                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
+                        return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
                     case Flashlight.MatchCosts.Error.InvalidMapSliceIndexEnd:
-                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the end of a lobby lobby with **${err.details.gameLength}** games)`)] });
+                        return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: you are trying to remove more maps than were played in the lobby (trying to remove **${err.details.index}** maps from the end of a lobby lobby with **${err.details.gameLength}** games)`)] });
                     case Flashlight.MatchCosts.Error.InvalidMapSliceIndexSum:
-                        return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: the amount of maps removed from the calculation must be smaller than the amount of maps that were played (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
+                        return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription(`Error: the amount of maps removed from the calculation must be smaller than the amount of maps that were played (trying to remove **${err.details.index}** maps from a lobby with **${err.details.gameLength}** games)`)] });
                 }
             }
-            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("An unknown error has occurred. Please try again.")] });
+            return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("An unknown error has occurred. Please try again.")] });
         }
 
         let playerList: User[] = [];
@@ -105,7 +121,7 @@ export const command: Flashlight.Command = {
 
                     const embed = createMCEmbed(res, { red: finalStr1, blue: finalStr2 }, opts);
 
-                    return message.reply(embed);
+                    return sendMsg(embed);
                 }
 
                 case TeamType.TeamVS: {
@@ -128,7 +144,7 @@ export const command: Flashlight.Command = {
 
                     const embed = createMCEmbed(res, { red: finalStrRed, blue: finalStrBlue }, opts);
 
-                    return message.reply(embed);
+                    return sendMsg(embed);
                 }
 
                 case TeamType.OneVS: {
@@ -144,12 +160,12 @@ export const command: Flashlight.Command = {
 
                     const embed = createMCEmbed(res, { red: [playerRed], blue: [playerBlue] }, opts);
 
-                    return message.reply(embed);
+                    return sendMsg(embed);
                 }
             }
         } catch (e: any) {
             Logger.error(e?.stack);
-            return message.reply({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: too many players in the lobby to calculate.")] })
+            return sendMsg({ embeds: [new MessageEmbed().setColor("DARK_RED").setDescription("Error: too many players in the lobby to calculate.")] });
         }
     }
 }
