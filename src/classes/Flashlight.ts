@@ -281,8 +281,9 @@ export namespace Flashlight {
                     if (i === 0) {
                         playerList.set(K, { ...V, team: Team.Red });
                         i++;
+                    } else {
+                        playerList.set(K, { ...V, team: Team.Blue });
                     }
-                    playerList.set(K, { ...V, team: Team.Blue });
                 }
             }
 
