@@ -30,3 +30,5 @@ for (const file of eventFiles) {
 
 client.login(config.discord.token);
 client.prefixes.on("error", err => Logger.error("Keyv: " + err));
+
+client.on("warn", e => Logger.info(e));

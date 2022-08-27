@@ -56,6 +56,6 @@ export const command: Flashlight.Command = {
         if (command.example)
             messageToSend.addField("**Example**", `${prefix}${command.name} ${command.example}`, false);
         
-            return sendMsg({ embeds: [messageToSend] });
+        return sendMsg({ embeds: [messageToSend] });
     },
 };

@@ -3,35 +3,37 @@ import { Flashlight } from "../classes/Flashlight";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { Message as DiscordMessage, MessageEmbed, MessagePayload, ReplyMessageOptions, Permissions } from "discord.js";
-const bitFieldReply = new Permissions([Permissions.FLAGS.READ_MESSAGE_HISTORY]);
+import { Message as DiscordMessage, MessageEmbed } from "discord.js";
 
 export const command: Flashlight.Command = {
     name: "match_costs",
     description: "Calculate match costs for a match",
     aliases: ["mc", "matchcosts", "match_cost", "matchcost"],
     usage:
-        "`[<remove from start> [remove from end]]` (`-` | `--`)(`i` | `ignore`)=`[<maps>,[to],[ignore]]` (`-` | `--`)`[nm | nf | ez | hd | hr | (dt | nc) | ht | fl | sd | rx | so | pf]`=`<number>`\n\n"
-        + "`[option/parameter]`: optional\n"
-        + "`<parameter>`: required\n" 
-        + "`[<parameter>, [parameter]]`: optional, at least one parameter is required\n"
-        + "(`o` | `option`): one of `o` or `option`\n"
-        + "all options to this command are case-insensitive"
-        + "(`i` | `ignore`): ignore games using a beatmap id or position relative to the first map of the match",
-    example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HR=0.91 -rx=0",
+        "`[<amount of maps to remove from the first> [amount of maps to remove from the last]]` `(-i | --ignore)`=`[<maps>,[to],[ignore]]` `(-wc | --win_condition)`=`<score | accuracy>` `(- | --)[nm | hr | ez | (dt | nc)]`=`<number>`\n\n"
+        + "`o | option`: either `o` or `option`\n"
+        + "`[parameter]`: `parameter` is optional\n"
+        + "`<parameter>`: `parameter` is required\n"
+        + "`[<first_parameter>,[following_parameters]]`: `first_parameter` is required if using the command, supports multiple parameters and `following_parameters` are optional (the command accepts infinite arguments as a comma-separated list).\n"
+        + "\n`(i | ignore)`: ignore game(s) using a beatmap ID or its position relative to the first map of the match. Multiple maps supported.\n"
+        + "`(oneVS | ov)`: force 1v1 mode\n"
+        + "`[nm | nf | ez | ...]`: sets custom multipliers for the selected mod(s).\n"
+        + "`(wc | win_condition)`: Supported modes: score, accuracy (or acc for short).\n"
+        + "\nAll options to all commands are case-insensitive.",
+    example: "1 2 -i=3,4 --dt=0.83 -HD=0.94 --HR=0.91 -rx=0 --win_condition=acc",
     hasArgs: true,
     async execute(client, args, _, message: DiscordMessage, sendMsg: Function) {
         if (!args)
-            return message.reply("No arguments provided");
+            return sendMsg("No arguments provided");
         const matchRegex = message
             .content
             .match(/(?<id>(?:https?:\/\/osu\.ppy\.sh\/(?:community\/matches|mp)\/)?\d+(?:\/?))(?:\s(?<startIndex>\d+)(?:\s(?<endIndex>\d+))?)?/)
             ?.groups;
 
         if (!matchRegex?.id)
-            return message.reply("Invalid MP link format");
+            return sendMsg("Invalid MP link format");
 
-        let options: Record<string, any> = { mapIndex: {}, multipliers: {} };
+        let options: Record<string, any> = { mapIndex: {}, multipliers: {}, winCondition: "score" };
 
         if (args?.i || args?.ignore) {
             if (Array.isArray(args?.i))
@@ -42,6 +44,24 @@ export const command: Flashlight.Command = {
                 options.mapIndex.midIndex = [args.i];
             else if (typeof args?.ignore === "number")
                 options.mapIndex.midIndex = [args.ignore];
+        }
+
+        if (args?.wc || args?.win_condition) {
+            let winCondition = (args.wc || args.win_condition) as string;
+            if (typeof winCondition === "boolean" && winCondition === true)
+                winCondition = "score";
+
+            if (winCondition.toLowerCase() === "accuracy" || winCondition.toLowerCase() === "acc")
+                options.winCondition = Flashlight.MatchCosts.WinCondition.Accuracy;
+            else
+                options.winCondition = Flashlight.MatchCosts.WinCondition.Score;
+        }
+        else {
+            options.winCondition = Flashlight.MatchCosts.WinCondition.Score;
+        }
+
+        if (args?.onevs || args?.ov || args?.one_vs) {
+            options.oneVS = true;
         }
 
         if (typeof matchRegex?.startIndex === "string") {
@@ -57,7 +77,7 @@ export const command: Flashlight.Command = {
                     options.multipliers[arg.toUpperCase()] = args[arg];
 
         let res: Flashlight.MatchCosts.Return;
-        
+
         try {
             res = await client.fetchMultiplayer(matchRegex.id, options);
         }
@@ -93,6 +113,9 @@ export const command: Flashlight.Command = {
         if (options?.multipliers)
             opts.mods = options.multipliers;
 
+        if (options?.winCondition)
+            opts.winCondition = options.winCondition;
+
         try {
             switch (res.teamType) {
                 case TeamType.HeadToHead: {
@@ -111,18 +134,14 @@ export const command: Flashlight.Command = {
                 }
 
                 case TeamType.TeamVS: {
-                    let indexRed = 0, indexBlue = 0, playerListRed: string[] = [], playerListBlue: string[] = [];
+                    let playerListRed: string[] = [], playerListBlue: string[] = [];
 
                     for (const [i, player] of playerList.entries()) {
-                        if (player.team === Team.Red) {
-                            indexRed++;
+                        if (player.team === Team.Red)
                             playerListRed.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id}) \`(#${i + 1})\``);
-                        }
 
-                        if (player.team === Team.Blue) {
-                            indexBlue++;
+                        if (player.team === Team.Blue)
                             playerListBlue.push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id}) \`(#${i + 1})\``);
-                        }
                     }
 
                     const finalStrRed = playerListRed;

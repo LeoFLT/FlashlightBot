@@ -6,13 +6,13 @@ export const command: Flashlight.Command = {
     description: "Information about the formula used to calculate `match_costs`",
     aliases: ["f"],
     hasArgs: false,
-    execute(_, __, ___, message, sendMsg: Function) {
+    execute(_, __, ___, ____, sendMsg: Function) {
         const mcImageEmbed = new MessageAttachment("./assets/mc_formula.png");
         const messageToSend = new MessageEmbed()
         .setColor("#b6268c")
         .setTitle("Match Costs Formula:")
         .setImage("attachment://mc_formula.png")
         .setFooter("Original formula created by D I O", "https://a.ppy.sh/3958619")
-        return sendMsg( { embeds: [messageToSend], files: [mcImageEmbed] });
+        return sendMsg({ embeds: [messageToSend], files: [mcImageEmbed] });
     }
 };

@@ -19,7 +19,7 @@ export function discordTimestamp(dateObj: Date, format?: string) {
 }
 
 export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue: string[], red:string[] }, options?: {
-    mention?: boolean, warmups?: Flashlight.MatchCosts.mapIndex, mods?: Flashlight.MatchCosts.Mods[] }): MessageOptions {
+    mention?: boolean, warmups?: Flashlight.MatchCosts.mapIndex, mods?: Flashlight.MatchCosts.Mods[], winCondition?: Flashlight.MatchCosts.WinCondition }): MessageOptions {
     let embed = new MessageEmbed()
         .setColor("#b6268c");
     let gameModeImg;
@@ -115,6 +115,13 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
     embed.addField("\u200B", "Played " + discordTimestamp(lobby.lobbyInfo.start_time) + " • " + discordTimestamp(lobby.lobbyInfo.start_time, "D"), false);
     let messageToSend = { embeds: [embed], allowedMentions: { repliedUser: options?.mention ? true : false } };
 
+    if (options?.winCondition && options.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy) {
+        messageToSend.embeds.push(
+            new MessageEmbed()
+            .setDescription("Using Accuracy as the win condition")
+        )
+    }
+    
     if (options?.warmups) {
         let start = options?.warmups?.startIndex;
         let middle = options?.warmups?.midIndex?.join(", ")

@@ -173,7 +173,7 @@ export interface User {
     country:         Country;
     mapAmount:       number;
     matchCost:       number;
-    scores:          { id: number, score: number }[];
+    scores:          { id: number, score: number, accuracy: number }[];
     finalScore?:     number;
     team?:           Team;
 }
