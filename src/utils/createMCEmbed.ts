@@ -7,7 +7,7 @@ function embedFieldsFromArr(arr: string[]): EmbedField[] {
     let newArrLeftHalf = newArrRightHalf.splice(0, Math.ceil(arr.length / 2));
     let finalArrOps = [newArrLeftHalf, newArrRightHalf];
     let finalEmbed: EmbedField[] = [];
-    
+
     for (const arr of finalArrOps) {
         finalEmbed.push({ name: "\u200B", value: arr.join("\n"), inline: true });
     }
@@ -18,27 +18,28 @@ export function discordTimestamp(dateObj: Date, format?: string) {
     return `<t:${Math.floor(dateObj ? dateObj.getTime() / 1000 : Date.now() / 1000)}:${format ? format : "R"}>`;
 }
 
-export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue: string[], red:string[] }, options?: {
-    mention?: boolean, warmups?: Flashlight.MatchCosts.mapIndex, mods?: Flashlight.MatchCosts.Mods[], winCondition?: Flashlight.MatchCosts.WinCondition }): MessageOptions {
+export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue: string[], red: string[] }, options?: {
+    mention?: boolean, warmups?: Flashlight.MatchCosts.mapIndex, mods?: Flashlight.MatchCosts.Mods[], winCondition?: Flashlight.MatchCosts.WinCondition
+}): MessageOptions {
     let embed = new MessageEmbed()
         .setColor("#b6268c");
     let gameModeImg;
 
     switch (lobby.gameMode) {
         case GameMode.Osu:
-			gameModeImg = 'https://i.imgur.com/fnRPSk2.png';
-			break;
-		case GameMode.Taiko:
-			gameModeImg = 'https://i.imgur.com/LMaVI8A.png';
-			break;
-		case GameMode.Catch:
-			gameModeImg = 'https://i.imgur.com/kftQ0tR.png';
-			break;
-		case GameMode.Mania:
-			gameModeImg = 'https://i.imgur.com/YHi4Mer.png';
-			break;
-		default:
-			gameModeImg = 'https://i.imgur.com/t6zXMlG.png';
+            gameModeImg = 'https://i.imgur.com/fnRPSk2.png';
+            break;
+        case GameMode.Taiko:
+            gameModeImg = 'https://i.imgur.com/LMaVI8A.png';
+            break;
+        case GameMode.Catch:
+            gameModeImg = 'https://i.imgur.com/kftQ0tR.png';
+            break;
+        case GameMode.Mania:
+            gameModeImg = 'https://i.imgur.com/YHi4Mer.png';
+            break;
+        default:
+            gameModeImg = 'https://i.imgur.com/t6zXMlG.png';
     }
     embed.setAuthor(lobby.lobbyInfo.name, gameModeImg, `https://osu.ppy.sh/community/matches/${lobby.lobbyInfo.id}`);
 
@@ -56,21 +57,21 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
                 secondPlayer = player;
         }
         embed.addField("Final Score:",
-        isTie ?
-            `${firstPlayer?.username}: \`${lobby.teamScores?.red}\`\n${secondPlayer?.username}: \`${lobby.teamScores?.blue}\``
-            : redIsWinner ? 
-                `**${firstPlayer?.username}: \`${lobby.teamScores?.red}\`**\n${secondPlayer?.username}: **\`${lobby.teamScores?.blue}\`**`
-                : `${firstPlayer?.username}: \`${lobby.teamScores?.red}\`\n**${secondPlayer?.username}: \`${lobby.teamScores?.blue}\`**`
+            isTie ?
+                `${firstPlayer?.username}: \`${lobby.teamScores?.red}\`\n${secondPlayer?.username}: \`${lobby.teamScores?.blue}\``
+                : redIsWinner ?
+                    `**${firstPlayer?.username}: \`${lobby.teamScores?.red}\`**\n${secondPlayer?.username}: **\`${lobby.teamScores?.blue}\`**`
+                    : `${firstPlayer?.username}: \`${lobby.teamScores?.red}\`\n**${secondPlayer?.username}: \`${lobby.teamScores?.blue}\`**`
         )
     }
 
     if (lobby.teamType === TeamType.TeamVS) {
         embed.addField("Final Score:",
-        isTie ?
-            `**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
-            : redIsWinner ? 
-                `**:small_red_triangle: __Red Team:__** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
-                : `**:small_blue_diamond: __Blue Team:__** \`${lobby.teamScores?.blue}\`\n**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\``
+            isTie ?
+                `**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
+                : redIsWinner ?
+                    `**:small_red_triangle: __Red Team:__** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
+                    : `**:small_blue_diamond: __Blue Team:__** \`${lobby.teamScores?.blue}\`\n**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\``
         )
     }
 
@@ -98,17 +99,17 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
         }
         if (embedIsTooBig) {
             embed
-            .addField(embedHeaderRed, playerList.red.join("\n"), true)
-            .addField("\u200B","\u200B", true)
-            .addField(embedHeaderBlue, playerList.blue.join("\n"), true)
-            .addField("\u200B", embedRedSplit.join("\n"), true)
-            .addField("\u200B","\u200B", true)
-            .addField("\u200B", embedBlueSplit.join("\n"), true)
+                .addField(embedHeaderRed, playerList.red.join("\n"), true)
+                .addField("\u200B", "\u200B", true)
+                .addField(embedHeaderBlue, playerList.blue.join("\n"), true)
+                .addField("\u200B", embedRedSplit.join("\n"), true)
+                .addField("\u200B", "\u200B", true)
+                .addField("\u200B", embedBlueSplit.join("\n"), true)
         } else {
             embed
-            .addField(embedHeaderRed, playerList.red.join("\n") || "\u200B", true)
-            .addField("\u200B","\u200B", true)
-            .addField(embedHeaderBlue, playerList.blue.join("\n") || "\u200B", true);
+                .addField(embedHeaderRed, playerList.red.join("\n") || "\u200B", true)
+                .addField("\u200B", "\u200B", true)
+                .addField(embedHeaderBlue, playerList.blue.join("\n") || "\u200B", true);
         }
     }
 
@@ -118,10 +119,10 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
     if (options?.winCondition && options.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy) {
         messageToSend.embeds.push(
             new MessageEmbed()
-            .setDescription("Using Accuracy as the win condition")
+                .setDescription("Using Accuracy as the win condition")
         )
     }
-    
+
     if (options?.warmups) {
         let start = options?.warmups?.startIndex;
         let middle = options?.warmups?.midIndex?.join(", ")
@@ -130,10 +131,10 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
         if (start || (middle && middle.length > 0) || end) {
             messageToSend.embeds.push(
                 new MessageEmbed()
-                .setDescription("**Ignoring**\n" + (start ? `**${start}** ${start > 1 ? "maps" : "map"} from the start\n` : "")
-                + (end ? `**${end}** ${end > 1 ? "maps" : "map"} from the end\n` : "")
-                + (middle ? `${options?.warmups?.midIndex && options.warmups.midIndex.length > 1 ? "games" : "game"} **${middle}** from the calculations` : "")
-                )
+                    .setDescription("**Ignoring**\n" + (start ? `**${start}** ${start > 1 ? "maps" : "map"} from the start\n` : "")
+                        + (end ? `**${end}** ${end > 1 ? "maps" : "map"} from the end\n` : "")
+                        + (middle ? `${options?.warmups?.midIndex && options.warmups.midIndex.length > 1 ? "games" : "game"} **${middle}** from the calculations` : "")
+                    )
             );
         }
     }
@@ -145,8 +146,8 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
             modsArr.push(`**${mod}**: ${options.mods[mod]}x`);
         if (modsArr.length > 0) {
             messageToSend.embeds.push(
-               new MessageEmbed()
-               .setDescription(finalStr + modsArr.join(" | "))
+                new MessageEmbed()
+                    .setDescription(finalStr + modsArr.join(" | "))
             )
         }
     }
