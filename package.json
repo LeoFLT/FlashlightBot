@@ -1,7 +1,7 @@
 {
-  "name": "flashlight_rewrite",
+  "name": "flashlight",
   "author": "LeoFLT",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "main": "dist/app.js",
   "license": "MIT",
   "scripts": {

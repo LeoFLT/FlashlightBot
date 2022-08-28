@@ -10,7 +10,7 @@ function embedFieldsFromArr(arr: string[]): EmbedField[] {
 
     for (const [index, arr] of finalArrOps.entries()) {
         if (index === 0)
-            finalEmbed.push({ name: "**Player LisT**", value: arr.join("\n"), inline: true})
+            finalEmbed.push({ name: "**Player List**", value: arr.join("\n"), inline: true})
         else
             finalEmbed.push({ name: "\u200B", value: arr.join("\n"), inline: true });
     }
@@ -60,7 +60,7 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
                 secondPlayer = player;
         }
         embed.addFields({
-            name: "Final Score:",
+            name: "Final Score",
             value: isTie ?
                 `${firstPlayer?.username}: \`${lobby.teamScores?.red}\`\n${secondPlayer?.username}: \`${lobby.teamScores?.blue}\``
                 : redIsWinner ?
@@ -71,7 +71,7 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
 
     if (lobby.teamType === TeamType.TeamVS) {
         embed.addFields({
-            name: "Final Score:",
+            name: "Final Score",
             value: isTie ?
                 `**:small_red_triangle: Red Team:** \u200B \u200B\`${lobby.teamScores?.red}\`\n**:small_blue_diamond: Blue Team:** \`${lobby.teamScores?.blue}\``
                 : redIsWinner ?
@@ -82,7 +82,7 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
 
     if (lobby.teamType === TeamType.HeadToHead) {
         const finalArr = [...redFinalArr, ...blueFinalArr];
-        embed.addFields(...embedFieldsFromArr(finalArr));
+        embed.addFields(embedFieldsFromArr(finalArr));
     }
     else if (lobby.teamType === TeamType.OneVS || lobby.teamType === TeamType.TeamVS) {
         const embedHeaderRed = lobby.teamType === TeamType.TeamVS ? `:small_red_triangle: **Red Team** (${playerList.red.length})` : "\u200B";
