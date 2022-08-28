@@ -3,7 +3,7 @@ import Logger from "../utils/logger";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction } from "discord.js";
+import { EmbedBuilder, Colors, ChatInputCommandInteraction } from "discord.js";
 
 const multiplierArr = [
     {
@@ -89,7 +89,7 @@ export const command: Flashlight.Command = {
             ?.groups;
 
         if (!matchRegex?.id)
-            return sendInteraction("Invalid MP link format");
+            return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription("Error: Invalid MP link format")], ephemeral: true });
 
         let options: Record<string, any> = { mapIndex: {}, multipliers: {}, winCondition: "score" };
 

@@ -1,9 +1,7 @@
 import Logger from "../utils/logger";
 import modalHandler from "../utils/modalHandler";
 import { Flashlight } from "../classes/Flashlight";
-import { MessagePayload, InteractionReplyOptions, InteractionType, EmbedBuilder, ModalSubmitInteraction } from "discord.js";
-import config from "../config/envVars";
-import { stringify } from "querystring";
+import { MessagePayload, InteractionType, InteractionReplyOptions } from "discord.js";
 
 export const event: Flashlight.Event = {
     name: "interactionCreate",
