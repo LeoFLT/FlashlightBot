@@ -7,6 +7,7 @@ import {
     Client as DiscordClient,
     ClientOptions as DiscordOptions,
     Collection as DiscordCollection,
+    MessageComponentInteraction,
     SlashCommandBuilder
 } from "discord.js";
 import Logger from "../utils/logger";
@@ -130,7 +131,7 @@ export namespace Flashlight {
         data: SlashCommandBuilder | any;
         usage?: string;
         example?: string;
-        execute(client: Flashlight.Client, interaction: ChatInputCommandInteraction, ...events: any[]): void;
+        execute(client: Flashlight.Client, interaction: ChatInputCommandInteraction | MessageComponentInteraction, ...events: any[]): void;
     }
 
     export class Client extends DiscordClient {

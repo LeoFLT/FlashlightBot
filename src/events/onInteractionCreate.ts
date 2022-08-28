@@ -1,11 +1,16 @@
 import Logger from "../utils/logger";
+import modalHandler from "../utils/modalHandler";
 import { Flashlight } from "../classes/Flashlight";
-import { MessagePayload, InteractionReplyOptions, Interaction } from "discord.js";
+import { MessagePayload, InteractionType, InteractionReplyOptions } from "discord.js";
 
 export const event: Flashlight.Event = {
     name: "interactionCreate",
     once: false,
     async execute(client, interaction) {
+        if (interaction.type === InteractionType.ModalSubmit) {
+            return await modalHandler(client, interaction);
+        }
+
         if (!interaction.isCommand())
             return;
 
