@@ -1,14 +1,15 @@
 import config from "../config/envVars";
 import { Match, Type as EventType, Game, GameMode, Mod as LobbyMod, Team, TeamType, User } from "../definitions/Match";
 import { median } from "../utils/math";
-import { parsedArgs } from "../utils/parser";
 import fetch from "node-fetch";
 import {
+    ChatInputCommandInteraction,
     Client as DiscordClient,
     ClientOptions as DiscordOptions,
-    Collection as DiscordCollection
+    Collection as DiscordCollection,
+    SlashCommandBuilder
 } from "discord.js";
-import Keyv from "keyv";
+import Logger from "../utils/logger";
 
 export namespace Flashlight {
     export namespace MatchCosts {
@@ -20,6 +21,11 @@ export namespace Flashlight {
         export type Mods = {
             [key in LobbyMod]?: number;
         }
+        export enum WinCondition {
+            Score = "score",
+            Accuracy = "accuracy"
+        };
+
         export enum Error {
             NoRegexMatch = "NoRegexMatch",
             OsuApiCallFail = "OsuApiCallFail",
@@ -120,29 +126,23 @@ export namespace Flashlight {
     }
 
     export interface Command {
-        name: string;
-        aliases: string[];
-        hasArgs: boolean;
-        description: string;
+        data: SlashCommandBuilder | any;
         usage?: string;
         example?: string;
-        isHelp?: boolean;
-        execute(client: Flashlight.Client, args?: parsedArgs, ...events: any[]): void;
+        execute(client: Flashlight.Client, interaction: ChatInputCommandInteraction, ...events: any[]): void;
     }
 
     export class Client extends DiscordClient {
         public commands: DiscordCollection<string, Command>;
         public osu: Flashlight.OsuOptions;
-        public prefixes: Keyv<any>;
 
         constructor(options: DiscordOptions) {
             super(options);
             this.commands = new DiscordCollection();
-            this.prefixes = new Keyv(`mongodb://localhost:${config.mongodb.port}/${config.mongodb.database}?readPreference=primary&appname=Flashlight&directConnection=true&ssl=false`);
             this.osu = {};
         }
 
-        private get osuTokenIsValid(): boolean {
+        get osuTokenIsValid(): boolean {
             if (!this.osu.tokenInfo?.expires_at || !this.osu.tokenInfo?.access_token)
                 return false;
             // token is almost certainly invalid by now (or it will be in the next 10 seconds)
@@ -150,7 +150,8 @@ export namespace Flashlight {
         }
 
         private async osuRequest(endpoint: string) {
-            if (!this.osuTokenIsValid)
+            Logger.info("osuTokenIsValid: " + this.osuTokenIsValid + ", expires_at: " + this.osu.tokenInfo?.expires_at?.toISOString());
+            if (!this.osuTokenIsValid) {
                 try {
                     await this.requestToken();
                 } catch (e: any) {
@@ -159,6 +160,7 @@ export namespace Flashlight {
                     if (!this.osuTokenIsValid)
                         throw new Error(MatchCosts.Error.OsuTokenInvalidAfterRefresh);
                 }
+            }
 
             const headers = {
                 "Authorization": `Bearer ${this.osu.tokenInfo?.access_token}`,
@@ -191,7 +193,6 @@ export namespace Flashlight {
             });
             const res = await req.json();
             this.osu.tokenInfo = res;
-
             if (!this.osu?.tokenInfo)
                 throw new Error(MatchCosts.Error.OsuTokenInvalid);
 
@@ -201,14 +202,15 @@ export namespace Flashlight {
 
         async fetchMultiplayer(lobby: string, options?: {
             multipliers?: MatchCosts.Mods,
-            mapIndex?: MatchCosts.mapIndex
+            mapIndex?: MatchCosts.mapIndex,
+            winCondition?: MatchCosts.WinCondition,
+            oneVS?: boolean
         }): Promise<MatchCosts.Return> {
             let eventIdCursor = 0;
             const modEnum = {
-                NM: 1, NF: 1, EZ: 1,
-                HD: 1, HR: 1, SD: 1,
-                DT: 1, RX: 1, HT: 1,
-                NC: 1, FL: 1, SO: 1, PF: 1
+                NM: 1, NF: 1, EZ: 1, HD: 1, HR: 1,
+                SD: 1, DT: 1, RX: 1, HT: 1, NC: 1,
+                FL: 1, SO: 1, PF: 1
             };
             let lobbyPlayerMapCounts: number[] = [];
             if (options?.hasOwnProperty("multipliers")) {
@@ -290,7 +292,7 @@ export namespace Flashlight {
             const mpLobby = {
                 lobbyInfo,
                 playerList: playerList,
-                teamType: playerList.size === 2 ? TeamType.OneVS : TeamType.Unknown,
+                teamType: (playerList.size === 2 || options?.oneVS) ? TeamType.OneVS : TeamType.Unknown,
                 gameList: new GameMap(),
                 teamScores: { "red": 0, "blue": 0 },
                 medianLobby: 0,
@@ -348,7 +350,7 @@ export namespace Flashlight {
                 }
             }
 
-            if (mpLobby.teamType === TeamType.OneVS) {
+            if (mpLobby.teamType === TeamType.OneVS || options?.oneVS === true) {
                 mpLobby.playerList.first().team = Team.Red;
                 mpLobby.playerList.last().team = Team.Blue;
             }
@@ -369,20 +371,31 @@ export namespace Flashlight {
 
                 for (const score of game.scores) {
                     const player = mpLobby.playerList.get(score.user_id);
+                    let currScore;
+                    if (options?.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy)
+                        currScore = score.accuracy;
+                    else
+                        currScore = score.score;
+
+                    // skip score check if winCondition is set to accuracy
+                    const minScoreCheckPass = currScore > 1000 || options?.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy;
                     if (!player)
                         continue;
 
                     if (mpLobby.teamType !== TeamType.OneVS)
                         player.team = score.match.team;
 
-                    if (score.score > 1000) {
+                    if (minScoreCheckPass) {
                         if (score.mods.length > 0) {
                             for (const mod of score.mods) {
                                 if (modEnum.hasOwnProperty(mod)) {
-                                    score.score *= modEnum[mod];
-                                    if (score.score === 0) {
-                                        // having one 0 points score results in 0 match cost for the whole match
-                                        score.score = 1;
+                                    currScore *= modEnum[mod];
+                                    // having one 0-point score results in 0 match cost for the whole match
+                                    if (currScore === 0) {
+                                        if (options?.winCondition !== Flashlight.MatchCosts.WinCondition.Accuracy)
+                                            currScore = 1;
+                                        else
+                                            currScore = 0.01;
                                     }
                                 }
                             }
@@ -390,22 +403,22 @@ export namespace Flashlight {
 
                         if (mpLobby.teamType === TeamType.TeamVS) {
                             if (score.match.team === Team.Red)
-                                redTotalScore += score.score;
+                                redTotalScore += currScore;
 
                             if (score.match.team === Team.Blue)
-                                blueTotalScore += score.score;
+                                blueTotalScore += currScore;
                         }
                         else if (mpLobby.teamType === TeamType.OneVS) {
                             const user = mpLobby.playerList.get(score.user_id);
                             if (user?.team === Team.Red)
-                                redTotalScore += score.score;
+                                redTotalScore += currScore;
 
                             if (user?.team === Team.Blue)
-                                blueTotalScore += score.score;
+                                blueTotalScore += currScore;
                         }
 
-                        scores.push(score.score);
-                        player.scores.push({ id: game.id, score: score.score });
+                        scores.push(currScore);
+                        player.scores.push({ id: game.id, score: currScore, accuracy: score.accuracy });
 
                         if (mpLobby.teamType === TeamType.TeamVS) {
                             if (player?.team && player.team !== Team.None)
@@ -434,7 +447,12 @@ export namespace Flashlight {
             mpLobby.playerList.forEach(player => {
                 let scoreSum = 0;
                 for (const score of player.scores) {
-                    scoreSum += (score.score / mpLobby.gameList.get(score.id as number)?.medianScore);
+                    let currScore;
+                    if (options?.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy)
+                        currScore = score.accuracy;
+                    else
+                        currScore = score.score;
+                    scoreSum += (currScore / mpLobby.gameList.get(score.id as number)?.medianScore);
                 }
                 scoreSum /= player.mapAmount;
                 if (scoreSum)
