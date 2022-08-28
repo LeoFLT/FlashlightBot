@@ -1,61 +1,52 @@
-import { EmbedField, MessageEmbed } from "discord.js";
 import { Flashlight } from "../classes/Flashlight";
-import config from "../config/envVars";
+import { EmbedField, EmbedBuilder } from "discord.js";
 
 export const command: Flashlight.Command = {
-    name: "help",
-    aliases: ["c", "h", "commands", "command"],
-    description: "returns information about a command",
-    usage:
-        "[command name]¹\n"
-        + "¹: optional, defaults to showing all commands\n",
-    example: "help",
-    hasArgs: false,
-    isHelp: true,
-    async execute(client, _, args, message, sendMsg: Function) {
-        const messageToSend = new MessageEmbed().setColor("#b6268c");
-        const prefix = await client.prefixes.get(message?.guild?.id) || config.discord.prefix;
-        let largestLen = 0;
+    data: {
+        name: "help",
+        description: "returns information about a command",
+        options: [
+            {
+                required: false,
+                type: 3,
+                name: "command_name",
+                description: "Specific command you need help for. Leave empty to show all commands available"
+            }
+        ]
+    },
+    async execute(client, interaction, sendMsg: Function) {
+        const messageToSend = new EmbedBuilder().setColor("#b6268c");
 
-        client.commands.forEach((cmd) => (cmd.name.length > largestLen ? largestLen = cmd.name.length : undefined));
-        if (!args.length) {
+        const commandToLookup = interaction.options.getString("command_name");
+
+        if (!commandToLookup) {
             let embedFields: EmbedField[] = [];
             let i = 0;
             client.commands.forEach((cmd) => {
                 embedFields.push({
-                    name: cmd.name,
-                    value: cmd.description,
+                    name: cmd.data.name,
+                    value: cmd.data.description,
                     inline: i++ % 3 === 0,
                 });
             });
             embedFields.sort((a, b) => a.name.localeCompare(b.name));
             messageToSend.setTitle("**Command list**")
-                .setDescription(`Use ${prefix}help command_name to get detailed information about a certain command.`);
-            messageToSend.addFields(...embedFields);
-             
-            return sendMsg({ embeds: [messageToSend] });
+                .setDescription("Use /help `command_name` to get detailed information about a certain command.")
+                .addFields(...embedFields);
+
+            return sendMsg({ embeds: [messageToSend], ephemeral: true });
         }
-        const name = args[0].toLowerCase();
-        const command = client.commands.get(name)
-            || client.commands.find((c) => c.aliases && c.aliases.includes(name));
+
+        const command = client.commands.get(commandToLookup)
 
         if (!command) {
-            return sendMsg(`\`${name}\` is not a valid command/alias.`);
+            return sendMsg({ content: `\`${commandToLookup}\` is not a valid command.`, ephemeral: true });
         }
-        messageToSend.addField("**Name**", command.name, true);
+        messageToSend.addFields({ name: "**Name**", value: command.data.name, inline: true });
 
-        if (command.aliases.length > 0)
-            messageToSend.addField("**Aliases**", command.aliases.join(", "), true);
-        
-        if (command.description)
-            messageToSend.addField("**Description**", command.description, false);
-        
-        if (command.usage)
-            messageToSend.addField("**Usage**", `${prefix}${command.name} ${command.usage}`, false);
-        
-        if (command.example)
-            messageToSend.addField("**Example**", `${prefix}${command.name} ${command.example}`, false);
-        
-        return sendMsg({ embeds: [messageToSend] });
+        if (command.data.description)
+            messageToSend.addFields({ name: "**Description**", value: command.data.description, inline: false });
+
+        return sendMsg({ embeds: [messageToSend], ephemeral: true });
     },
-};
+}

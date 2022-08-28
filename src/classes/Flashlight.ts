@@ -1,14 +1,14 @@
 import config from "../config/envVars";
 import { Match, Type as EventType, Game, GameMode, Mod as LobbyMod, Team, TeamType, User } from "../definitions/Match";
 import { median } from "../utils/math";
-import { parsedArgs } from "../utils/parser";
 import fetch from "node-fetch";
 import {
+    ChatInputCommandInteraction,
     Client as DiscordClient,
     ClientOptions as DiscordOptions,
-    Collection as DiscordCollection
+    Collection as DiscordCollection,
+    SlashCommandBuilder
 } from "discord.js";
-import Keyv from "keyv";
 import Logger from "../utils/logger";
 
 export namespace Flashlight {
@@ -126,25 +126,19 @@ export namespace Flashlight {
     }
 
     export interface Command {
-        name: string;
-        aliases: string[];
-        hasArgs: boolean;
-        description: string;
+        data: SlashCommandBuilder | any;
         usage?: string;
         example?: string;
-        isHelp?: boolean;
-        execute(client: Flashlight.Client, args?: parsedArgs, ...events: any[]): void;
+        execute(client: Flashlight.Client, interaction: ChatInputCommandInteraction, ...events: any[]): void;
     }
 
     export class Client extends DiscordClient {
         public commands: DiscordCollection<string, Command>;
         public osu: Flashlight.OsuOptions;
-        public prefixes: Keyv<any>;
 
         constructor(options: DiscordOptions) {
             super(options);
             this.commands = new DiscordCollection();
-            this.prefixes = new Keyv(`mongodb://localhost:${config.mongodb.port}/${config.mongodb.database}?readPreference=primary&appname=Flashlight&directConnection=true&ssl=false`);
             this.osu = {};
         }
 

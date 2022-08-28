@@ -3,6 +3,7 @@ dotenv.config({ path: `${__dirname}/../../.env` });
 
 export default {
     discord: {
+        clientId: process.env.DISCORD_CLIENT_ID,
         token: process.env.DISCORD_TOKEN,
         owner: process.env.DISCORD_OWNER,
         prefix: process.env.DISCORD_PREFIX

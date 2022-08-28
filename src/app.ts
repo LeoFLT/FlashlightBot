@@ -2,19 +2,22 @@ import config from "./config/envVars";
 import Logger from "./utils/logger";
 import { Flashlight } from "./classes/Flashlight";
 import { readdirSync } from "fs";
-import { Intents } from "discord.js";
+import { GatewayIntentBits, Partials } from "discord.js";
+import BuildSlashCommands from "./utils/slashCommandBuilder";
 
-const client = new Flashlight.Client ({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES], partials: ['CHANNEL']});
+const client = new Flashlight.Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages], partials: [Partials.Channel] });
 const commandFiles = readdirSync(`${__dirname}/commands`).filter(file => file.endsWith('.js'));
 const eventFiles = readdirSync(`${__dirname}/events`).filter((file) => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     try {
-        const command: Flashlight.Command = require(`${__dirname}/commands/${file}`).command;
-        client.addCommand(command.name, command);
+        const command: Flashlight.Command = require(`${__dirname}/commands/${file}`)?.command;
+        if (!command)
+            continue;
+        client.addCommand(command.data.name, command);
         Logger.info(`Loaded command: ${file}`);
     } catch (e: any) {
-        Logger.error(`${file}: ${e.message}`);
+        Logger.error(e);
     }
 }
 
@@ -28,7 +31,5 @@ for (const file of eventFiles) {
     }
 }
 
-client.login(config.discord.token);
-client.prefixes.on("error", err => Logger.error("Keyv: " + err));
-
+BuildSlashCommands().then(() => client.login(config.discord.token));
 client.on("warn", e => Logger.info(e));
