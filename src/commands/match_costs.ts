@@ -100,7 +100,7 @@ export const command: Flashlight.Command = {
             ?.groups;
 
         if (!matchRegex?.id)
-            return sendInteraction("Invalid MP link format");
+            return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription("Error: Invalid MP link format")], ephemeral: true });
 
         let options: Record<string, any> = { mapIndex: {}, multipliers: {}, winCondition: "score" };
 
