@@ -1,5 +1,5 @@
 import { Flashlight } from "../classes/Flashlight";
-import { EmbedField, EmbedBuilder } from "discord.js";
+import { EmbedField, EmbedBuilder, ChatInputCommandInteraction } from "discord.js";
 
 export const command: Flashlight.Command = {
     data: {
@@ -14,7 +14,7 @@ export const command: Flashlight.Command = {
             }
         ]
     },
-    async execute(client, interaction, sendMsg: Function) {
+    async execute(client, interaction: ChatInputCommandInteraction, sendMsg: Function) {
         const messageToSend = new EmbedBuilder().setColor("#b6268c");
 
         const commandToLookup = interaction.options.getString("command_name");

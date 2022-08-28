@@ -3,7 +3,7 @@ import Logger from "../utils/logger";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction } from "discord.js";
 
 const multiplierArr = [
     {
@@ -83,18 +83,7 @@ export const command: Flashlight.Command = {
 
         ]
     },
-    /*usage:
-        "`[<amount of maps to remove from the first> [amount of maps to remove from the last]]` `(-i | --ignore)`=`[<maps>,[to],[ignore]]` `(-wc | --win_condition)`=`<score | accuracy>` `(- | --)[nm | hr | ez | (dt | nc)]`=`<number>`\n\n"
-        + "`o | option`: either `o` or `option`\n"
-        + "`[parameter]`: `parameter` is optional\n"
-        + "`<parameter>`: `parameter` is required\n"
-        + "`[<first_parameter>,[following_parameters]]`: `first_parameter` is required if using the command, supports multiple parameters and `following_parameters` are optional (the command accepts infinite arguments as a comma-separated list).\n"
-        + "\n`(i | ignore)`: ignore game(s) using a beatmap ID or its position relative to the first map of the match. Multiple maps supported.\n"
-        + "`(oneVS | ov)`: force 1v1 mode\n"
-        + "`[nm | nf | ez | ...]`: sets custom multipliers for the selected mod(s).\n"
-        + "`(wc | win_condition)`: Supported modes: score, accuracy (or acc for short).\n"
-        + "\nAll options to all commands are case-insensitive.",*/
-    async execute(client, interaction, sendInteraction: Function) {
+    async execute(client, interaction: ChatInputCommandInteraction, sendInteraction: Function) {
         let matchRegex = (interaction.options.get("mp_link")!.value as string)
             .match(/(?<id>(?:https?:\/\/osu\.ppy\.sh\/(?:community\/matches|mp)\/)?\d+(?:\/?)?)?/)
             ?.groups;
