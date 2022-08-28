@@ -36,6 +36,7 @@ export namespace Flashlight {
             InvalidMapSliceIndexMid = "InvalidMapSliceIndexMid",
             InvalidMapSliceIndexEnd = "InvalidMapSliceIndexEnd",
             InvalidMapSliceIndexSum = "InvalidMapSliceIndexSum",
+            NoPlayersInLobby = "NoPlayersInLobby"
         };
         export type Return = {
             lobbyInfo: Match["match"],
@@ -246,7 +247,9 @@ export namespace Flashlight {
             const playerList = new UserMap();
             let lobbyInfo = res.match;
             lobbyInfo.start_time = new Date(lobbyInfo.start_time);
-            lobbyInfo.end_time = new Date(lobbyInfo.end_time);
+
+            if (lobbyInfo.end_time)
+                lobbyInfo.end_time = new Date(lobbyInfo.end_time);
 
             if (res.events[0].detail.type !== EventType.MatchCreated) {
                 // we're missing data, query again

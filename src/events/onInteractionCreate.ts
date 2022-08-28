@@ -1,6 +1,6 @@
 import Logger from "../utils/logger";
 import { Flashlight } from "../classes/Flashlight";
-import { MessagePayload, Interaction, InteractionReplyOptions } from "discord.js";
+import { MessagePayload, InteractionReplyOptions, Interaction } from "discord.js";
 
 export const event: Flashlight.Event = {
     name: "interactionCreate",
@@ -18,7 +18,7 @@ export const event: Flashlight.Event = {
         if (!command)
             return;
 
-            try {
+        try {
             command.execute(client, interaction, sendInteraction);
         } catch (e: any) {
             Logger.error(e);

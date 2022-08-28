@@ -151,7 +151,7 @@ export interface Statistics {
 export interface MatchInfo {
     id:         number;
     start_time: Date;
-    end_time:   Date;
+    end_time:   Date | null;
     name:       string;
 }
 

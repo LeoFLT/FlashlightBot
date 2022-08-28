@@ -3,7 +3,7 @@ import Logger from "../utils/logger";
 import { round } from "../utils/math"
 import createMCEmbed from "../utils/createMCEmbed";
 import { Mod, Team, TeamType, User } from "../definitions/Match";
-import { EmbedBuilder, Colors } from "discord.js";
+import { EmbedBuilder, Colors, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
 const multiplierArr = [
     {
@@ -150,7 +150,6 @@ export const command: Flashlight.Command = {
         }
         catch (e: any) {
             let err;
-            console.log({ e });
             if (e?.isFlashlightError)
                 err = e as Flashlight.Err;
             if (err && err?.details) {
@@ -183,7 +182,7 @@ export const command: Flashlight.Command = {
 
         if (options?.winCondition)
             opts.winCondition = options.winCondition;
-
+        
         try {
             switch (res.teamType) {
                 case TeamType.HeadToHead: {
@@ -192,14 +191,12 @@ export const command: Flashlight.Command = {
                         finalStrArr
                             .push(`\`${player.mapAmount < 10 ? " " : ""}${player.mapAmount} • ${round(player.matchCost, 4)}\` • :flag_${player.country_code.toLowerCase()}: [${player.usernameMdSafe}](https://osu.ppy.sh/u/${player.id})`);
 
-
                     const halfPoint = Math.ceil(finalStrArr.length / 2);
                     const finalStr1 = finalStrArr.splice(0, halfPoint);
                     const finalStr2 = finalStrArr;
 
-                    const embed = createMCEmbed(res, { red: finalStr1, blue: finalStr2 }, opts);
-
-                    return sendInteraction({ embeds: [embed] });
+                    let embed = createMCEmbed(res, { red: finalStr1, blue: finalStr2 }, opts);
+                    return sendInteraction(embed);
                 }
 
                 case TeamType.TeamVS: {
@@ -217,13 +214,15 @@ export const command: Flashlight.Command = {
                     const finalStrBlue = playerListBlue;
 
                     const embed = createMCEmbed(res, { red: finalStrRed, blue: finalStrBlue }, opts);
-
                     return sendInteraction(embed);
                 }
 
                 case TeamType.OneVS: {
                     let playerRed: string = "", playerBlue: string = "";
-                    let firstPlayer = playerList[0].id;
+                    let firstPlayer = playerList[0]?.id;
+
+                    if (!firstPlayer)
+                        throw new Flashlight.Err(Flashlight.MatchCosts.Error.NoPlayersInLobby);
 
                     for (const [i, player] of playerList.entries()) {
                         if (player.id === firstPlayer)
@@ -233,13 +232,24 @@ export const command: Flashlight.Command = {
                     }
 
                     const embed = createMCEmbed(res, { red: [playerRed], blue: [playerBlue] }, opts);
-
                     return sendInteraction(embed);
                 }
+                default:
+                    return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription(`Error: no games found for this lobby`)], ephemeral: true });
             }
         } catch (e: any) {
             Logger.error(e?.stack);
-            return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription("Error: too many players in the lobby to calculate.")], ephemeral: true });
+            let err;
+            if (e?.isFlashlightError)
+                err = e as Flashlight.Err;
+            if (err && err?.details) {
+                switch (err.message) {
+                    case Flashlight.MatchCosts.Error.NoPlayersInLobby:
+                        return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription("Error: no games found for this lobby")], ephemeral: true });
+                    default:
+                        return sendInteraction({ embeds: [new EmbedBuilder().setColor(Colors.DarkRed).setDescription("Error: too many players in the lobby to calculate.")], ephemeral: true });
+                }
+            }
         }
     }
 }
