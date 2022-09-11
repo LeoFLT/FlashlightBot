@@ -124,7 +124,7 @@ export default function (lobby: Flashlight.MatchCosts.Return, playerList: { blue
         value: "Played " + discordTimestamp(lobby.lobbyInfo.start_time) + " • " + discordTimestamp(lobby.lobbyInfo.start_time, "D"),
         inline: false
     });
-    let messageToSend = { embeds: [embed], allowedMentions: { repliedUser: options?.mention ? true : false } };
+    let messageToSend = { content: `Lobby link: <https://osu.ppy.sh/community/matches/${lobby.lobbyInfo.id}>`, embeds: [embed], allowedMentions: { repliedUser: options?.mention ? true : false } };
 
     if (options?.winCondition && options.winCondition === Flashlight.MatchCosts.WinCondition.Accuracy) {
         messageToSend.embeds.push(
